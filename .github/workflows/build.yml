@@ -1,0 +1,48 @@
+name: Build MacOS App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Build app
+      run: |
+        python setup.py py2app
+    
+    - name: Create DMG
+      run: |
+        hdiutil create -volname "字体精简工具" -srcfolder dist/字体精简工具.app -ov -format UDZO 字体精简工具.dmg
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FontSubsetTool
+        path: 字体精简工具.dmg
+    
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: 字体精简工具.dmg
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

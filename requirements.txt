@@ -1,0 +1,2 @@
+flask==2.0.1
+fonttools==4.29.1 
