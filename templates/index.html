@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TypeTrim - 智能字体精简工具</title>
+    <title>TypeTrim - Smart Font Optimizer</title>
     <meta charset="utf-8">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 25h24l-12-20z' stroke='%235E6AD2' stroke-width='2' stroke-linejoin='round' fill='%235E6AD2' fill-opacity='0.1'/%3E%3C/svg%3E">
     <style>
         :root {
             --bg-color: #000000;
@@ -28,43 +29,56 @@
             align-items: center;
         }
         
-        .brand {
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 24px;
+            padding: 0 40px;
+            z-index: 100;
         }
         
-        .logo {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #7C5CFF 0%, #5E6AD2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -0.02em;
-        }
-        
-        .header {
-            text-align: center;
-            margin: 40px 0;
-        }
-        
-        .header h1 {
-            font-size: 48px;
+        .nav-brand {
+            font-size: 20px;
             font-weight: 600;
-            margin: 0;
-            background: linear-gradient(to right, #fff 20%, rgba(255, 255, 255, 0.7));
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-brand span {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
-        .header p {
-            font-size: 16px;
+        .hero {
+            margin-top: 120px;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .hero h1 {
+            font-size: 64px;
+            font-weight: 600;
+            line-height: 1.2;
+            margin: 0;
+            background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 20px;
             color: var(--text-secondary);
-            margin: 16px 0;
-            line-height: 1.6;
+            margin: 24px auto;
             max-width: 600px;
-            margin: 16px auto;
+            line-height: 1.6;
         }
         
         .container {
@@ -112,8 +126,45 @@
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
         }
         
-        .result {
-            margin-top: 0;
+        .file-list {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .file-list::-webkit-scrollbar-track {
+            background: var(--card-bg);
+            border-radius: 4px;
+        }
+        
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .file-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .button-group {
@@ -184,49 +235,80 @@
                 transparent 100%);
         }
         
-        .fixed-buttons {
-            display: none;
+        .option-section {
+            position: relative;
+            padding: 24px;
+            margin: -24px;
+            margin-bottom: 32px;
         }
         
-        .file-list {
-            margin-top: 20px;
-            text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 8px;
+        .option-section:last-child {
+            margin-bottom: -24px;
         }
         
-        .file-list::-webkit-scrollbar {
-            width: 8px;
+        .option-section + .option-section {
+            border-top: 1px solid var(--border);
         }
         
-        .file-list::-webkit-scrollbar-track {
-            background: var(--card-bg);
-            border-radius: 4px;
+        .option-section h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         
-        .file-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
         }
         
-        .file-list::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .file-item {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin: 4px 0;
+        .option-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 8px;
             transition: all 0.2s;
         }
         
-        .file-item:hover {
-            background: rgba(255, 255, 255, 0.05);
+        .option-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.03);
+        }
+        
+        input[type="checkbox"]:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        input[type="checkbox"]:checked::after {
+            content: "✓";
+            color: white;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+        }
+        
+        .option-text {
+            margin-left: 12px;
+            color: var(--text);
+            font-size: 14px;
         }
         
         .progress {
@@ -274,143 +356,23 @@
         .fade-in {
             animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        .option-section {
-            position: relative;
-            padding: 24px;
-            margin: -24px;
-            margin-bottom: 32px;
-        }
-        
-        .option-section:last-child {
-            margin-bottom: -24px;
-        }
-        
-        .option-section + .option-section {
-            border-top: 1px solid var(--border);
-        }
-        
-        .option-section h3 {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin: 0 0 20px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        
-        .option-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-        
-        .option-item {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .option-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-        
-        .option-text {
-            margin-left: 12px;
-            color: var(--text);
-            font-size: 14px;
-        }
-        
-        input[type="checkbox"] {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: rgba(255, 255, 255, 0.03);
-        }
-        
-        input[type="checkbox"]:checked {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        input[type="checkbox"]:checked::after {
-            content: "✓";
-            color: white;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
-        }
-        
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 64px;
-            background: var(--nav-bg);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding: 0 40px;
-            z-index: 100;
-        }
-        
-        .nav-brand {
-            font-size: 20px;
-            font-weight: 600;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .hero {
-            margin-top: 120px;
-            text-align: center;
-            padding: 0 20px;
-        }
-        
-        .hero h1 {
-            font-size: 64px;
-            font-weight: 600;
-            line-height: 1.2;
-            margin: 0;
-            background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .hero p {
-            font-size: 20px;
-            color: var(--text-secondary);
-            margin: 24px auto;
-            max-width: 600px;
-            line-height: 1.6;
-        }
-        
-        @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .animate-up {
-            animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
     </style>
 </head>
 <body>
     <div class="nav">
-        <div class="nav-brand">TypeTrim</div>
+        <div class="nav-brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-right: 8px; vertical-align: middle;">
+                <path d="M3 19h18l-9-15z" stroke="url(#gradient)" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M7 13h10l-5-8z" stroke="url(#gradient)" stroke-width="2" stroke-linejoin="round"/>
+                <defs>
+                    <linearGradient id="gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#5E6AD2"/>
+                        <stop offset="100%" stop-color="#7C5CFF"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span>TypeTrim</span>
+        </div>
     </div>
     
     <div class="hero">
@@ -429,7 +391,6 @@
             
             <div class="button-group">
                 <button class="button" id="process-btn" disabled>开始处理</button>
-                <button class="button" id="download-btn" style="display: none;">下载文件</button>
             </div>
             
             <div id="result" style="display: none;">
@@ -518,7 +479,6 @@
         const progress = document.getElementById('progress');
         const result = document.getElementById('result');
         const sizeInfo = document.getElementById('size-info');
-        const downloadBtn = document.getElementById('download-btn');
         
         function updateFileList() {
             fileList.innerHTML = '';
@@ -629,6 +589,18 @@
                             </div>
                         `);
                     } else {
+                        // 在处理成功后直接使用原始文件名
+                        const downloadUrl = `/download/${data.filename}`;
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                        iframe.src = `/download/${data.filename}`;
+                        
+                        // 3秒后移除 iframe
+                        setTimeout(() => {
+                            document.body.removeChild(iframe);
+                        }, 3000);
+                        
                         results.push(`
                             <div class="file-result fade-in">
                                 <div class="file-name">${file.name}</div>
@@ -646,7 +618,6 @@
                 
                 sizeInfo.innerHTML = results.join('');
                 result.style.display = 'block';
-                downloadBtn.style.display = 'block';
                 
             } catch (error) {
                 alert('处理过程中出错：' + error);
@@ -654,14 +625,6 @@
                 progress.style.display = 'none';
                 processBtn.disabled = false;
             }
-        });
-        
-        // 处理下载
-        downloadBtn.addEventListener('click', () => {
-            if (currentFiles.size === 0) return;
-            
-            const filename = `subset_${Array.from(currentFiles)[currentFiles.size - 1].name}`;
-            window.location.href = `/download/${filename}`;
         });
     </script>
 </body>

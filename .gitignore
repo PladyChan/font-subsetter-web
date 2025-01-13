@@ -1,10 +1,10 @@
 
+.DS_Store
+.eggs/
+.venv/
+build/
+dist/
+*.dmg
 __pycache__/
 *.pyc
-.env
-venv/
-.DS_Store
-uploads/
-output/
-*.log
 
