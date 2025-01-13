@@ -7,6 +7,7 @@ from typetrim import process_font_file  # 导入原始的 TypeTrim 功能
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_cors import CORS  # 添加这行
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -14,6 +15,9 @@ app = Flask(__name__,
     template_folder='templates',  # 明确指定模板目录
     static_folder='static'        # 明确指定静态文件目录
 )
+
+# 启用 CORS
+CORS(app)
 
 # 添加访问限制
 limiter = Limiter(
