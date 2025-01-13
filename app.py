@@ -4,6 +4,9 @@ import os
 import json
 import tempfile
 from typetrim import process_font_file  # 导入原始的 TypeTrim 功能
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__,
     template_folder='templates',  # 明确指定模板目录
@@ -25,8 +28,10 @@ def handle_500_error(error):
 @app.route('/')
 def index():
     try:
+        app.logger.debug('Attempting to render index.html')
         return render_template('index.html')
     except Exception as e:
+        app.logger.error(f'Error rendering template: {str(e)}')
         return str(e), 500
 
 @app.route('/process', methods=['POST'])
