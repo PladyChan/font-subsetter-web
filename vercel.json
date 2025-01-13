@@ -11,5 +11,17 @@
       "src": "/(.*)",
       "dest": "wsgi.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONUNBUFFERED": "1",
+    "FLASK_ENV": "production",
+    "FLASK_DEBUG": "0"
+  },
+  "regions": ["hkg1"],
+  "functions": {
+    "wsgi.py": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
 } 
