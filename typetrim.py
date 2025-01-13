@@ -1,7 +1,11 @@
 """
 TypeTrim - Smart Font Subsetting Tool
 -----------------------------------
-A modern tool for optimizing font files by preserving only the essential characters.
+Copyright (c) 2024 PladyChan
+All rights reserved.
+
+This source code is licensed under the MIT license found in the
+LICENSE file in the root directory of this source tree.
 """ 
 
 from fontTools.ttLib import TTFont

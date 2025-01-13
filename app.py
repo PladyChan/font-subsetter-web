@@ -5,6 +5,8 @@ import json
 import tempfile
 from typetrim import process_font_file  # 导入原始的 TypeTrim 功能
 import logging
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -12,6 +14,22 @@ app = Flask(__name__,
     template_folder='templates',  # 明确指定模板目录
     static_folder='static'        # 明确指定静态文件目录
 )
+
+# 添加访问限制
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
+
+# 添加安全头
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Frame-Options'] = 'DENY'  # 防止点击劫持
+    response.headers['X-Content-Type-Options'] = 'nosniff'  # 防止内容类型嗅探
+    response.headers['X-XSS-Protection'] = '1; mode=block'  # XSS 保护
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'  # 强制 HTTPS
+    return response
 
 # 使用临时目录
 def get_temp_dir():
@@ -35,6 +53,7 @@ def index():
         return str(e), 500
 
 @app.route('/process', methods=['POST'])
+@limiter.limit("30 per minute")  # 限制处理请求频率
 def process_font():
     if 'font' not in request.files:
         return jsonify({'error': '请选择字体文件'}), 400
