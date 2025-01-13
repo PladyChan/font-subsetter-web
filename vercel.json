@@ -12,6 +12,10 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "wsgi.py"
     }
@@ -19,7 +23,7 @@
   "env": {
     "PYTHONUNBUFFERED": "1",
     "FLASK_ENV": "production",
-    "FLASK_DEBUG": "0"
+    "FLASK_DEBUG": "1"
   },
   "regions": ["hkg1"]
 } 

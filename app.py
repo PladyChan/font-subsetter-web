@@ -5,7 +5,10 @@ import json
 import tempfile
 from typetrim import process_font_file  # 导入原始的 TypeTrim 功能
 
-app = Flask(__name__)
+app = Flask(__name__,
+    template_folder='templates',  # 明确指定模板目录
+    static_folder='static'        # 明确指定静态文件目录
+)
 
 # 使用临时目录
 def get_temp_dir():
@@ -21,7 +24,10 @@ def handle_500_error(error):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return str(e), 500
 
 @app.route('/process', methods=['POST'])
 def process_font():
