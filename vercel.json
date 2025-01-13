@@ -27,7 +27,7 @@
         "Access-Control-Allow-Headers": "Content-Type",
         "Cache-Control": "public, max-age=0, must-revalidate"
       },
-      "continue": true
+      "dest": "wsgi.py"
     }
   ],
   "env": {
