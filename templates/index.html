@@ -366,9 +366,7 @@
         
         .custom-input {
             width: 100%;
-            padding: 12px;
-            padding-left: 16px;
-            padding-right: 16px;
+            padding: 12px 16px;
             border-radius: 8px;
             border: 1px solid var(--border);
             background: var(--card-bg);
@@ -533,19 +531,12 @@
                 </div>
             </div>
             
-            <div class="option-group">
-                <h3>特殊功能</h3>
-                <div class="options-container">
-                    <!-- ... 特殊功能的选项 ... -->
-                </div>
-            </div>
-            
-            <div class="option-group">
+            <div class="option-section">
                 <h3>自定义字符</h3>
                 <div class="custom-chars-input">
                     <input type="text" 
                            id="customChars" 
-                           placeholder="输入需要保留的字符" 
+                           placeholder="输入需要保留的字符，例如：你好世界" 
                            class="custom-input">
                 </div>
             </div>
@@ -667,27 +658,41 @@
                         
                         const data = await response.json();
                         if (data.error) {
-                            showError(data.error);
+                            showError(`${file.name}: ${data.error}`);
                         } else {
-                            showSuccess(`
-                                原始大小: ${data.original_size}
-                                优化后: ${data.new_size}
-                                减少: ${data.reduction}
-                            `);
+                            // 显示每个文件的处理结果
+                            result.style.display = 'block';
+                            const resultHtml = `
+                                <div class="file-result fade-in">
+                                    <div class="file-name">${file.name}</div>
+                                    <div class="file-stats">
+                                        <div>原始大小: ${data.original_size}</div>
+                                        <div>优化后: ${data.new_size}</div>
+                                        <div>减少: ${data.reduction}</div>
+                                    </div>
+                                </div>
+                            `;
+                            sizeInfo.insertAdjacentHTML('beforeend', resultHtml);
+                            
                             // 触发下载
                             if (data.download_url) {
-                                window.location.href = data.download_url;
+                                const link = document.createElement('a');
+                                link.href = data.download_url;
+                                link.download = data.filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
                             }
                         }
                     } catch (error) {
-                        showError('处理出错: ' + error);
+                        showError(`${file.name}: 处理出错 - ${error}`);
                     }
                     
                     processed++;
                 }
                 
             } catch (error) {
-                alert('处理过程中出错：' + error);
+                showError('处理过程中出错：' + error);
             } finally {
                 progress.style.display = 'none';
                 processBtn.disabled = false;
