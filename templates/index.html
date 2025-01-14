@@ -643,6 +643,8 @@
                 // 添加自定义字符
                 options.customChars = document.getElementById('customChars').value;
                 
+                console.log('选项状态:', options);
+                
                 for (const file of currentFiles) {
                     const formData = new FormData();
                     formData.append('font', file);

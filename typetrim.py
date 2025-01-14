@@ -13,6 +13,9 @@ from fontTools.subset import Subsetter, Options
 import string
 import os
 import tempfile
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 def process_font_file(input_path, options=None):
     """处理字体文件并返回结果"""
@@ -70,6 +73,9 @@ def process_font_file(input_path, options=None):
         original_size = os.path.getsize(input_path) / 1024
         new_size = os.path.getsize(output_path) / 1024
         reduction = ((original_size - new_size) / original_size * 100)
+        
+        logging.debug(f"接收到的选项: {options}")
+        logging.debug(f"生成的字符集: {chars}")
         
         return {
             'success': True,
