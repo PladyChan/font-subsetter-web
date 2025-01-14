@@ -57,7 +57,7 @@ def index():
         return str(e), 500
 
 @app.route('/process', methods=['POST'])
-@limiter.limit("30 per minute")  # 限制处理请求频率
+@limiter.limit("30 per minute")
 def process_font():
     if 'font' not in request.files:
         return jsonify({'error': '请选择字体文件'}), 400
@@ -67,23 +67,33 @@ def process_font():
         return jsonify({'error': '未选择文件'}), 400
     
     try:
+        # 获取自定义字符
+        options = json.loads(request.form.get('options', '{}'))
+        custom_chars = options.get('customChars', '')
+        
         # 使用临时文件保存上传的字体
-        with tempfile.NamedTemporaryFile(delete=False) as input_temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(font_file.filename)[1]) as input_temp:
             font_file.save(input_temp.name)
             input_path = input_temp.name
             
-        # 使用 TypeTrim 处理字体
-        result = process_font_file(input_path)
+        # 使用 TypeTrim 处理字体，传入自定义字符
+        result = process_font_file(input_path, {'custom_chars': custom_chars})
         
-        # 清理临时文件
+        # 清理输入临时文件
         os.unlink(input_path)
+        
+        # 添加下载链接到结果
+        result['download_url'] = f"/download/{os.path.basename(result['output_path'])}"
         
         return jsonify(result)
         
     except Exception as e:
         # 确保清理临时文件
         if 'input_path' in locals():
-            os.unlink(input_path)
+            try:
+                os.unlink(input_path)
+            except:
+                pass
         return jsonify({'error': str(e)}), 500
 
 @app.route('/download/<filename>')
@@ -98,7 +108,7 @@ def download(filename):
             temp_path,
             as_attachment=True,
             mimetype='font/ttf',
-            download_name=filename
+            download_name=os.path.basename(filename)
         )
         
         # 文件发送后删除临时文件

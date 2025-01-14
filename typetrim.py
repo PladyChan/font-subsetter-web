@@ -36,6 +36,10 @@ def process_font_file(input_path, options=None):
         chars.update('←→↑↓')               # 箭头
         chars.update('éèêëāīūēīō')         # 变音符号
         
+        # 添加自定义字符
+        if options and 'custom_chars' in options:
+            chars.update(options['custom_chars'])
+        
         # 设置 subsetter 选项
         subsetter_options = Options()
         subsetter_options.layout_features = ['kern', 'liga', 'frac']

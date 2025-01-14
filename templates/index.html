@@ -358,6 +358,32 @@
         .fade-in {
             animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
+        .custom-chars-input {
+            margin-top: 12px;
+            width: 100%;
+        }
+        
+        .custom-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .custom-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
+        }
+        
+        .custom-input::placeholder {
+            color: var(--text-secondary);
+        }
     </style>
 </head>
 <body>
@@ -466,6 +492,16 @@
                     </label>
                 </div>
             </div>
+            
+            <div class="option-group">
+                <h3>自定义字符</h3>
+                <div class="custom-chars-input">
+                    <input type="text" 
+                           id="customChars" 
+                           placeholder="输入需要保留的字符，如：你好世界" 
+                           class="custom-input">
+                </div>
+            </div>
         </div>
     </div>
     
@@ -570,6 +606,9 @@
                     options[checkbox.value] = checkbox.checked;
                 });
                 
+                // 添加自定义字符
+                options.customChars = document.getElementById('customChars').value;
+                
                 for (const file of currentFiles) {
                     const formData = new FormData();
                     formData.append('font', file);
@@ -577,43 +616,7 @@
                     
                     progress.textContent = `${Math.round((processed / currentFiles.size) * 100)}%`;
                     
-                    const response = await fetch('/process', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const data = await response.json();
-                    if (data.error) {
-                        results.push(`
-                            <div class="file-result fade-in">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-stats">Failed - ${data.error}</div>
-                            </div>
-                        `);
-                    } else {
-                        // 在处理成功后直接使用原始文件名
-                        const downloadUrl = `/download/${data.filename}`;
-                        const iframe = document.createElement('iframe');
-                        iframe.style.display = 'none';
-                        document.body.appendChild(iframe);
-                        iframe.src = `/download/${data.filename}`;
-                        
-                        // 3秒后移除 iframe
-                        setTimeout(() => {
-                            document.body.removeChild(iframe);
-                        }, 3000);
-                        
-                        results.push(`
-                            <div class="file-result fade-in">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-stats">
-                                    <span>Original: ${data.original_size}</span>
-                                    <span>Optimized: ${data.new_size}</span>
-                                    <span>Reduced: ${data.reduction}</span>
-                                </div>
-                            </div>
-                        `);
-                    }
+                    processFont(formData);
                     
                     processed++;
                 }
@@ -628,6 +631,32 @@
                 processBtn.disabled = false;
             }
         });
+        
+        function processFont(formData) {
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showSuccess(`
+                        原始大小: ${data.original_size}
+                        优化后: ${data.new_size}
+                        减少: ${data.reduction}
+                    `);
+                    // 触发下载
+                    if (data.download_url) {
+                        window.location.href = data.download_url;
+                    }
+                }
+            })
+            .catch(error => {
+                showError('处理出错: ' + error);
+            });
+        }
     </script>
 </body>
 </html> 
