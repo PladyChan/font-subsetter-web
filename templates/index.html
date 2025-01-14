@@ -367,6 +367,8 @@
         .custom-input {
             width: 100%;
             padding: 12px;
+            padding-left: 16px;
+            padding-right: 16px;
             border-radius: 8px;
             border: 1px solid var(--border);
             background: var(--card-bg);
@@ -383,6 +385,44 @@
         
         .custom-input::placeholder {
             color: var(--text-secondary);
+        }
+        
+        .option-group {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            padding-left: 32px;
+            padding-right: 32px;
+            border: 1px solid var(--border);
+        }
+        
+        .option-group + .option-group {
+            margin-top: 16px;
+        }
+        
+        .option-group h3 {
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0 0 16px 0;
+            color: var(--text-secondary);
+        }
+        
+        .custom-chars-input {
+            margin-top: 12px;
+            width: 100%;
+        }
+        
+        .custom-input {
+            width: 100%;
+            padding: 12px;
+            padding-left: 16px;
+            padding-right: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 16px;
+            transition: all 0.2s;
         }
     </style>
 </head>
@@ -494,11 +534,18 @@
             </div>
             
             <div class="option-group">
+                <h3>特殊功能</h3>
+                <div class="options-container">
+                    <!-- ... 特殊功能的选项 ... -->
+                </div>
+            </div>
+            
+            <div class="option-group">
                 <h3>自定义字符</h3>
                 <div class="custom-chars-input">
                     <input type="text" 
                            id="customChars" 
-                           placeholder="输入需要保留的字符，如：你好世界" 
+                           placeholder="输入需要保留的字符" 
                            class="custom-input">
                 </div>
             </div>
@@ -590,14 +637,10 @@
         
         // 处理文件处理
         processBtn.addEventListener('click', async () => {
-            if (currentFiles.size === 0) return;
-            
-            progress.style.display = 'block';
-            result.style.display = 'none';
-            processBtn.disabled = true;
-            
             try {
-                const results = [];
+                progress.style.display = 'block';
+                processBtn.disabled = true;
+                
                 let processed = 0;
                 
                 // 收集所有选项
@@ -616,13 +659,32 @@
                     
                     progress.textContent = `${Math.round((processed / currentFiles.size) * 100)}%`;
                     
-                    processFont(formData);
+                    try {
+                        const response = await fetch('/process', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        if (data.error) {
+                            showError(data.error);
+                        } else {
+                            showSuccess(`
+                                原始大小: ${data.original_size}
+                                优化后: ${data.new_size}
+                                减少: ${data.reduction}
+                            `);
+                            // 触发下载
+                            if (data.download_url) {
+                                window.location.href = data.download_url;
+                            }
+                        }
+                    } catch (error) {
+                        showError('处理出错: ' + error);
+                    }
                     
                     processed++;
                 }
-                
-                sizeInfo.innerHTML = results.join('');
-                result.style.display = 'block';
                 
             } catch (error) {
                 alert('处理过程中出错：' + error);
@@ -631,32 +693,6 @@
                 processBtn.disabled = false;
             }
         });
-        
-        function processFont(formData) {
-            fetch('/process', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    showError(data.error);
-                } else {
-                    showSuccess(`
-                        原始大小: ${data.original_size}
-                        优化后: ${data.new_size}
-                        减少: ${data.reduction}
-                    `);
-                    // 触发下载
-                    if (data.download_url) {
-                        window.location.href = data.download_url;
-                    }
-                }
-            })
-            .catch(error => {
-                showError('处理出错: ' + error);
-            });
-        }
     </script>
 </body>
 </html> 
