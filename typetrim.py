@@ -129,23 +129,37 @@ def process_font_file(input_path, options=None):
             if not isinstance(chars, set) or not chars:
                 raise ValueError("字符集无效或为空")
             
-            # 转换字符到 Unicode 码点，同时处理异常情况
-            unicodes = []
+            # 转换字符到 Unicode 码点，特别处理中文字符
+            unicodes = set()  # 使用集合去重
             for char in chars:
                 try:
                     if isinstance(char, str):
-                        unicode_value = ord(char)
-                        unicodes.append(unicode_value)
+                        # 确保字符是 UTF-8 编码
+                        char_encoded = char.encode('utf-8').decode('utf-8')
+                        unicode_value = ord(char_encoded)
+                        unicodes.add(unicode_value)
+                        # 如果是中文字符，添加相关的变体
+                        if 0x4E00 <= unicode_value <= 0x9FFF:  # CJK统一汉字范围
+                            logging.debug(f"处理中文字符: {char} (U+{unicode_value:04X})")
                     else:
                         logging.warning(f"跳过无效字符: {char}")
-                except (TypeError, ValueError) as e:
+                except (TypeError, ValueError, UnicodeError) as e:
                     logging.error(f"无法转换字符 '{char}' 到 Unicode: {str(e)}")
                     continue
             
             if not unicodes:
                 raise ValueError("没有有效的 Unicode 字符")
             
-            logging.debug(f"Unicode 码点列表（前10个）: {unicodes[:10]}...")
+            # 转换回列表并排序，确保稳定的处理顺序
+            unicodes = sorted(list(unicodes))
+            logging.debug(f"Unicode 码点列表（前10个）: {[hex(u) for u in unicodes[:10]]}...")
+            
+            # 设置字体子集化选项
+            subsetter_options.layout_features = ['*']  # 保留所有布局特性
+            subsetter_options.glyph_names = True  # 保留字形名称
+            subsetter_options.recommended_glyphs = True  # 包含推荐的字形
+            subsetter_options.hinting = True  # 保留 hinting 信息
+            
             subsetter.populate(unicodes=unicodes)
             logging.debug("字符集填充成功")
         except Exception as e:
@@ -154,6 +168,17 @@ def process_font_file(input_path, options=None):
         
         try:
             logging.debug("开始子集化处理")
+            # 检查字体是否支持中文
+            if any(0x4E00 <= u <= 0x9FFF for u in unicodes):
+                logging.debug("检测到中文字符，使用中文字体处理模式")
+                # 保留所有中文相关的表
+                subsetter_options.no_subset_tables += [
+                    'GSUB', 'GPOS', 'kern', 
+                    'GDEF', 'BASE', 'JSTF',
+                    'DSIG', 'gasp', 'hdmx', 'LTSH',
+                    'PCLT', 'VDMX', 'vhea', 'vmtx'
+                ]
+            
             subsetter.subset(font)
             logging.debug("子集化处理成功")
         except Exception as e:
@@ -165,8 +190,15 @@ def process_font_file(input_path, options=None):
             subsetter_options.ignore_missing_glyphs = True
             subsetter_options.ignore_missing_unicodes = True
             subsetter_options.desubroutinize = False  # 禁用字形优化
-            subsetter_options.no_subset_tables += ['GSUB', 'GPOS', 'kern']  # 保留更多表
+            subsetter_options.no_subset_tables = ['*']  # 保留所有表
             subsetter_options.retain_gids = True
+            subsetter_options.legacy_kern = True
+            subsetter_options.name_IDs = ['*']
+            subsetter_options.name_languages = ['*']
+            subsetter_options.obfuscate_names = False
+            subsetter_options.notdef_glyph = True
+            subsetter_options.notdef_outline = True
+            subsetter_options.recommended_glyphs = True
             
             try:
                 subsetter = Subsetter(options=subsetter_options)
