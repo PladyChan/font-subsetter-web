@@ -35,8 +35,6 @@ def get_chars_by_options(options):
     if options.get('cn_punctuation', False):
         # 中文标点
         chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
-    if options.get('degree', False):
-        chars.add('°')                      # 度数符号
     if options.get('chinese_common', False):
         # 常用汉字集（3500字）
         common_chars = (
