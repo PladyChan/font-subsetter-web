@@ -16,6 +16,9 @@ app = Flask(__name__,
     static_folder='static'        # 明确指定静态文件目录
 )
 
+# 设置上传文件大小限制为 50MB
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
 # 启用 CORS
 CORS(app)
 
@@ -46,6 +49,13 @@ def handle_500_error(error):
         "error": "Internal Server Error",
         "message": str(error)
     }), 500
+
+@app.errorhandler(413)
+def handle_413_error(error):
+    return jsonify({
+        "error": "文件太大",
+        "message": "上传的文件超过50MB限制"
+    }), 413
 
 @app.route('/')
 def index():

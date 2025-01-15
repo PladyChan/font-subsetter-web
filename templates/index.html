@@ -698,6 +698,11 @@
         function handleFiles(files) {
             Array.from(files).forEach(file => {
                 if (file.name.match(/\.(ttf|otf|woff|woff2|eot)$/i)) {
+                    // 检查文件大小是否超过50MB
+                    if (file.size > 50 * 1024 * 1024) {
+                        showError(`文件 ${file.name} 超过50MB限制`);
+                        return;
+                    }
                     currentFiles.add(file);
                 }
             });
