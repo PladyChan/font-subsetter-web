@@ -66,6 +66,12 @@ def process_font_file(input_path, options=None):
         font = TTFont(input_path)
         logging.debug("字体文件加载成功")
         
+        # 保存原始字体名称信息
+        original_names = {}
+        if 'name' in font:
+            for record in font['name'].names:
+                original_names[record.nameID] = record
+        
         # 根据选项构建字符集
         chars = get_chars_by_options(options or {})
         if not chars:
@@ -85,6 +91,8 @@ def process_font_file(input_path, options=None):
             layout_features.extend(['sups', 'subs'])
         
         subsetter_options.layout_features = layout_features
+        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
+        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.desubroutinize = True
@@ -116,6 +124,12 @@ def process_font_file(input_path, options=None):
             subsetter.populate(unicodes=unicodes)
             subsetter.subset(font)
             logging.debug("使用备用方案处理成功")
+        
+        # 恢复原始字体名称信息
+        if 'name' in font and original_names:
+            for nameID, record in original_names.items():
+                font['name'].setName(str(record), record.nameID, record.platformID, 
+                                   record.platEncID, record.langID)
         
         # 使用临时文件保存输出
         logging.debug("开始保存处理后的字体")
