@@ -74,11 +74,21 @@ def process_font_file(input_path, options=None):
         
         # 设置 subsetter 选项
         subsetter_options = Options()
-        subsetter_options.layout_features = ['kern', 'liga', 'frac']
+        
+        # 根据选项设置布局特性
+        layout_features = []
+        if options.get('ligatures'):
+            layout_features.extend(['liga', 'clig'])
+        if options.get('fractions'):
+            layout_features.append('frac')
+        if options.get('superscript'):
+            layout_features.extend(['sups', 'subs'])
+        
+        subsetter_options.layout_features = layout_features
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.desubroutinize = True
-        logging.debug("Subsetter 选项设置完成")
+        logging.debug(f"Subsetter 选项设置完成，布局特性: {layout_features}")
         
         # 处理字体
         subsetter = Subsetter(options=subsetter_options)
