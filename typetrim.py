@@ -24,14 +24,13 @@ def get_chars_by_options(options):
     # 基础字符
     if options.get('latin', False):
         chars.update(string.ascii_letters)  # 英文字母
+        chars.add(' ')  # 只保留基本空格
     if options.get('numbers', False):
         chars.update(string.digits)         # 数字
     if options.get('en_punctuation', False):
-        # 英文标点和特殊符号
+        # 英文标点和特殊符号，移除多余空格
         chars.update(',.!?;:\'\"()[]{}')
         chars.update('@#$%^&*_+-=\\|/<>~`')
-        # 空格和制表符
-        chars.update(' \t')
     if options.get('cn_punctuation', False):
         # 中文标点
         chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
