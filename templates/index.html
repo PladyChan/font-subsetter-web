@@ -626,11 +626,25 @@
             handleFiles(this.files);
         });
         
+        // 添加错误处理函数
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.querySelector('.result-panel').appendChild(errorDiv);
+            
+            // 3秒后自动移除错误消息
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 3000);
+        }
+        
         // 处理文件处理
         processBtn.addEventListener('click', async () => {
             try {
                 progress.style.display = 'block';
                 processBtn.disabled = true;
+                document.querySelector('.result-panel').innerHTML = ''; // 清空之前的结果
                 
                 let processed = 0;
                 
@@ -658,43 +672,39 @@
                             body: formData
                         });
                         
-                        const data = await response.json();
-                        if (data.error) {
-                            showError(`${file.name}: ${data.error}`);
-                        } else {
-                            // 显示每个文件的处理结果
-                            result.style.display = 'block';
-                            const resultHtml = `
-                                <div class="file-result fade-in">
-                                    <div class="file-name">${file.name}</div>
-                                    <div class="file-stats">
-                                        <div>原始大小: ${data.original_size}</div>
-                                        <div>优化后: ${data.new_size}</div>
-                                        <div>减少: ${data.reduction}</div>
-                                    </div>
-                                </div>
-                            `;
-                            sizeInfo.insertAdjacentHTML('beforeend', resultHtml);
-                            
-                            // 触发下载
-                            if (data.download_url) {
-                                const link = document.createElement('a');
-                                link.href = data.download_url;
-                                link.download = data.filename;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            }
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || '处理失败');
                         }
+                        
+                        const data = await response.json();
+                        
+                        // 显示处理结果
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item';
+                        resultDiv.innerHTML = `
+                            <span class="filename">${file.name}</span>
+                            <span class="status success">处理成功</span>
+                            <a href="${data.download_url}" class="download-btn" download>下载</a>
+                        `;
+                        document.querySelector('.result-panel').appendChild(resultDiv);
+                        
                     } catch (error) {
-                        showError(`${file.name}: 处理出错 - ${error}`);
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item error';
+                        resultDiv.innerHTML = `
+                            <span class="filename">${file.name}</span>
+                            <span class="status error">处理失败</span>
+                            <span class="error-message">${error.message}</span>
+                        `;
+                        document.querySelector('.result-panel').appendChild(resultDiv);
                     }
                     
                     processed++;
                 }
                 
             } catch (error) {
-                showError('处理过程中出错：' + error);
+                showError('处理过程中出错：' + error.message);
             } finally {
                 progress.style.display = 'none';
                 processBtn.disabled = false;
