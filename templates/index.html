@@ -330,24 +330,55 @@
         .file-result {
             background: var(--card-bg);
             border-radius: 12px;
-            padding: 20px;
-            margin: 12px 0;
+            padding: 16px 20px;
+            margin-bottom: 12px;
             border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 24px;
         }
         
         .file-name {
             color: var(--text);
             font-weight: 500;
-            font-size: 16px;
-            margin-bottom: 12px;
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
         
         .file-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
             color: var(--text-secondary);
             font-size: 14px;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+        }
+        
+        .stat-value {
+            color: var(--text);
+        }
+        
+        .reduction {
+            color: var(--success);
+            font-weight: 500;
         }
         
         @keyframes fadeIn {
@@ -371,7 +402,7 @@
             border: 1px solid var(--border);
             background: var(--card-bg);
             color: var(--text);
-            font-size: 16px;
+            font-size: 14px;
             transition: all 0.2s;
         }
         
@@ -600,7 +631,7 @@
                 <div class="custom-chars-input">
                     <input type="text" 
                            id="customChars" 
-                           placeholder="输入需要保留的字符，例如：你好世界" 
+                           placeholder="请输入需要保留的字符，多个字符之间无需分隔，如：&*…￥" 
                            class="custom-input">
                 </div>
             </div>
@@ -767,11 +798,21 @@
                         resultDiv.className = 'result-item';
                         resultDiv.innerHTML = `
                             <div class="file-result fade-in">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-stats">
-                                    <div>原始大小: ${data.original_size}</div>
-                                    <div>优化后: ${data.new_size}</div>
-                                    <div>减少: ${data.reduction}</div>
+                                <div class="file-info">
+                                    <div class="file-name">${file.name}</div>
+                                    <div class="file-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">原始:</span>
+                                            <span class="stat-value">${data.original_size}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">优化后:</span>
+                                            <span class="stat-value">${data.new_size}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="reduction">-${data.reduction}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         `;
