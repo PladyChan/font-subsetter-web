@@ -26,15 +26,15 @@ def get_chars_by_options(options):
         chars.update(string.ascii_letters)  # 英文字母
     if options.get('numbers', False):
         chars.update(string.digits)         # 数字
-    if options.get('punctuation', False):
-        # 英文标点
+    if options.get('en_punctuation', False):
+        # 英文标点和特殊符号
         chars.update(',.!?;:\'\"()[]{}')
-        # 中文标点
-        chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
-        # 常用特殊符号
         chars.update('@#$%^&*_+-=\\|/<>~`')
         # 空格和制表符
         chars.update(' \t')
+    if options.get('cn_punctuation', False):
+        # 中文标点
+        chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
     if options.get('degree', False):
         chars.add('°')                      # 度数符号
     if options.get('chinese_common', False):
@@ -90,6 +90,9 @@ def process_font_file(input_path, options=None):
         logging.debug(f"开始加载字体文件: {input_path}")
         font = TTFont(input_path)
         logging.debug("字体文件加载成功")
+        
+        # 获取原始文件扩展名
+        original_ext = os.path.splitext(input_path)[1].lower()
         
         # 保存原始字体名称信息
         original_names = {}
@@ -156,9 +159,9 @@ def process_font_file(input_path, options=None):
                 font['name'].setName(str(record), record.nameID, record.platformID, 
                                    record.platEncID, record.langID)
         
-        # 使用临时文件保存输出
+        # 使用临时文件保存输出，保持原始扩展名
         logging.debug("开始保存处理后的字体")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(input_path)[1]) as output_temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=original_ext) as output_temp:
             output_path = output_temp.name
             font.save(output_path)
         logging.debug(f"字体保存成功: {output_path}")

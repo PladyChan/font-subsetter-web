@@ -540,7 +540,7 @@
     <div class="container">
         <div class="left-panel">
             <div class="upload-area" id="drop-area">
-                <input type="file" id="file-input" accept=".ttf,.otf" multiple style="display: none;">
+                <input type="file" id="file-input" accept=".ttf,.otf,.woff,.woff2,.eot" multiple style="display: none;">
                 <p style="font-size: 18px; margin-bottom: 8px;">拖放字体文件到这里</p>
                 <p style="color: var(--text-secondary);">或点击选择文件</p>
                 <div class="file-list" id="file-list"></div>
@@ -570,8 +570,12 @@
                         <span class="option-text">数字 (0-9)</span>
                     </label>
                     <label class="option-item">
-                        <input type="checkbox" name="chars" value="punctuation" checked>
-                        <span class="option-text">标点符号 (中英文标点、@#%等特殊符号)</span>
+                        <input type="checkbox" name="chars" value="en_punctuation" checked>
+                        <span class="option-text">英文标点 (,.!?@#%等)</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" name="chars" value="cn_punctuation" checked>
+                        <span class="option-text">中文标点 (，。！？《》等)</span>
                     </label>
                     <label class="option-item">
                         <input type="checkbox" name="chars" value="degree" checked>
@@ -697,7 +701,7 @@
         
         function handleFiles(files) {
             Array.from(files).forEach(file => {
-                if (file.name.endsWith('.ttf') || file.name.endsWith('.otf')) {
+                if (file.name.match(/\.(ttf|otf|woff|woff2|eot)$/i)) {
                     currentFiles.add(file);
                 }
             });
@@ -753,7 +757,8 @@
                 const options = {
                     latin: false,
                     numbers: false,
-                    punctuation: false,
+                    en_punctuation: false,
+                    cn_punctuation: false,
                     degree: false,
                     chinese_common: false,
                     chinese_name: false,

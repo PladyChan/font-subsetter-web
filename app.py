@@ -56,15 +56,23 @@ def index():
         app.logger.error(f'Error rendering template: {str(e)}')
         return str(e), 500
 
+def allowed_file(filename):
+    """检查文件是否是允许的字体格式"""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'ttf', 'otf', 'woff', 'woff2', 'eot'}
+
 @app.route('/process', methods=['POST'])
 @limiter.limit("30 per minute")
 def process_font():
     if 'font' not in request.files:
-        return jsonify({'error': '请选择字体文件'}), 400
+        return jsonify({'error': '未找到字体文件'}), 400
     
     font_file = request.files['font']
     if font_file.filename == '':
-        return jsonify({'error': '未选择文件'}), 400
+        return jsonify({'error': '未选择字体文件'}), 400
+    
+    if not allowed_file(font_file.filename):
+        return jsonify({'error': '不支持的字体格式'}), 400
     
     try:
         # 保存原始文件名
