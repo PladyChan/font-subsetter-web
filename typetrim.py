@@ -60,7 +60,7 @@ def get_chars_by_options(options):
     if options.get('currency', False):
         chars.update('$€¥£¢')              # 货币符号
     if options.get('math', False):
-        chars.update('+-×÷=≠<>≤≥')         # 数学符号
+        chars.update('+-×÷=≠<>≤≥°')         # 数学符号和度数符号
     if options.get('copyright', False):
         chars.update('©®™')                # 版权符号
     if options.get('arrows', False):

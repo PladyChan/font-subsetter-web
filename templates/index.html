@@ -577,6 +577,14 @@
                         <input type="checkbox" name="chars" value="degree" checked>
                         <span class="option-text">度数符号 (°)</span>
                     </label>
+                    <label class="option-item">
+                        <input type="checkbox" name="chars" value="chinese_common">
+                        <span class="option-text">常用汉字 (3500字)</span>
+                    </label>
+                    <label class="option-item">
+                        <input type="checkbox" name="chars" value="chinese_name">
+                        <span class="option-text">人名用字</span>
+                    </label>
                 </div>
             </div>
             
@@ -589,7 +597,7 @@
                     </label>
                     <label class="option-item">
                         <input type="checkbox" name="chars" value="math">
-                        <span class="option-text">数学符号 (+-×÷=)</span>
+                        <span class="option-text">数学符号 (+-×÷=°)</span>
                     </label>
                     <label class="option-item">
                         <input type="checkbox" name="chars" value="copyright">
@@ -747,6 +755,8 @@
                     numbers: false,
                     punctuation: false,
                     degree: false,
+                    chinese_common: false,
+                    chinese_name: false,
                     currency: false,
                     math: false,
                     copyright: false,
