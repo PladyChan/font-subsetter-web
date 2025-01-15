@@ -85,8 +85,18 @@ def process_font():
             result = process_font_file(input_path, options)
             logging.debug(f"字体处理结果: {result}")
         except Exception as e:
-            logging.error(f"字体处理错误: {str(e)}")
-            raise
+            error_msg = str(e)
+            error_type = type(e).__name__
+            import traceback
+            stack_trace = traceback.format_exc()
+            logging.error(f"字体处理错误: {error_msg}")
+            logging.error(f"错误类型: {error_type}")
+            logging.error(f"错误堆栈: {stack_trace}")
+            return jsonify({
+                'error': f"处理失败: {error_msg}",
+                'error_type': error_type,
+                'stack_trace': stack_trace
+            }), 500
         
         # 清理输入临时文件
         os.unlink(input_path)
@@ -97,14 +107,24 @@ def process_font():
         return jsonify(result)
         
     except Exception as e:
-        logging.error(f"处理过程发生错误: {str(e)}")
+        error_msg = str(e)
+        error_type = type(e).__name__
+        import traceback
+        stack_trace = traceback.format_exc()
+        logging.error(f"处理过程发生错误: {error_msg}")
+        logging.error(f"错误类型: {error_type}")
+        logging.error(f"错误堆栈: {stack_trace}")
         # 确保清理临时文件
         if 'input_path' in locals():
             try:
                 os.unlink(input_path)
             except:
                 pass
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'error': f"处理失败: {error_msg}",
+            'error_type': error_type,
+            'stack_trace': stack_trace
+        }), 500
 
 @app.route('/download/<filename>')
 def download(filename):
