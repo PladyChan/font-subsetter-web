@@ -107,22 +107,19 @@ def process_font_file(input_path, options=None):
         # 设置 subsetter 选项
         subsetter_options = Options()
         
-        # 根据选项设置布局特性
-        layout_features = []
-        if options.get('ligatures'):
-            layout_features.extend(['liga', 'clig'])
-        if options.get('fractions'):
-            layout_features.append('frac')
-        if options.get('superscript'):
-            layout_features.extend(['sups', 'subs'])
-        
-        subsetter_options.layout_features = layout_features
-        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
-        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
+        # 针对中文字体的特殊处理
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.desubroutinize = True
-        logging.debug(f"Subsetter 选项设置完成，布局特性: {layout_features}")
+        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
+        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
+        subsetter_options.legacy_kern = True  # 保留传统字距调整
+        subsetter_options.symbol_cmap = True  # 支持符号字体
+        subsetter_options.recalc_bounds = True  # 重新计算边界
+        subsetter_options.recalc_timestamp = False  # 不重新计算时间戳
+        subsetter_options.retain_gids = True  # 保留原始字形ID
+        
+        logging.debug(f"Subsetter 选项设置完成: {vars(subsetter_options)}")
         
         # 处理字体
         subsetter = Subsetter(options=subsetter_options)
@@ -132,20 +129,23 @@ def process_font_file(input_path, options=None):
             if not isinstance(chars, set) or not chars:
                 raise ValueError("字符集无效或为空")
             
-            # 转换字符到 Unicode 码点
+            # 转换字符到 Unicode 码点，同时处理异常情况
             unicodes = []
             for char in chars:
                 try:
-                    unicode_value = ord(char)
-                    unicodes.append(unicode_value)
-                except TypeError as e:
+                    if isinstance(char, str):
+                        unicode_value = ord(char)
+                        unicodes.append(unicode_value)
+                    else:
+                        logging.warning(f"跳过无效字符: {char}")
+                except (TypeError, ValueError) as e:
                     logging.error(f"无法转换字符 '{char}' 到 Unicode: {str(e)}")
                     continue
             
             if not unicodes:
                 raise ValueError("没有有效的 Unicode 字符")
-                
-            logging.debug(f"Unicode 码点列表: {unicodes}")
+            
+            logging.debug(f"Unicode 码点列表（前10个）: {unicodes[:10]}...")
             subsetter.populate(unicodes=unicodes)
             logging.debug("字符集填充成功")
         except Exception as e:
@@ -157,28 +157,46 @@ def process_font_file(input_path, options=None):
             subsetter.subset(font)
             logging.debug("子集化处理成功")
         except Exception as e:
-            logging.error(f"子集化处理出错（第一次尝试）: {str(e)}")
-            # 如果出错，尝试不使用布局特性
-            logging.debug("尝试不使用布局特性进行处理")
-            subsetter_options.layout_features = []
-            subsetter_options.no_subset_tables += ['GSUB', 'GPOS']
-            subsetter = Subsetter(options=subsetter_options)
-            subsetter.populate(unicodes=unicodes)
-            subsetter.subset(font)
-            logging.debug("使用备用方案处理成功")
+            logging.error(f"子集化处理出错: {str(e)}")
+            logging.debug("尝试使用备用方案处理")
+            
+            # 重置选项，使用更保守的设置
+            subsetter_options = Options()
+            subsetter_options.ignore_missing_glyphs = True
+            subsetter_options.ignore_missing_unicodes = True
+            subsetter_options.desubroutinize = False  # 禁用字形优化
+            subsetter_options.no_subset_tables += ['GSUB', 'GPOS', 'kern']  # 保留更多表
+            subsetter_options.retain_gids = True
+            
+            try:
+                subsetter = Subsetter(options=subsetter_options)
+                subsetter.populate(unicodes=unicodes)
+                subsetter.subset(font)
+                logging.debug("使用备用方案处理成功")
+            except Exception as backup_error:
+                logging.error(f"备用方案也失败: {str(backup_error)}")
+                raise ValueError(f"字体处理失败: {str(e)}\n备用方案失败: {str(backup_error)}")
         
         # 恢复原始字体名称信息
         if 'name' in font and original_names:
-            for nameID, record in original_names.items():
-                font['name'].setName(str(record), record.nameID, record.platformID, 
-                                   record.platEncID, record.langID)
+            try:
+                for nameID, record in original_names.items():
+                    font['name'].setName(str(record), record.nameID, record.platformID, 
+                                       record.platEncID, record.langID)
+                logging.debug("成功恢复字体名称信息")
+            except Exception as e:
+                logging.error(f"恢复字体名称时出错: {str(e)}")
         
         # 使用临时文件保存输出，保持原始扩展名
         logging.debug("开始保存处理后的字体")
-        with tempfile.NamedTemporaryFile(delete=False, suffix=original_ext) as output_temp:
-            output_path = output_temp.name
-            font.save(output_path)
-        logging.debug(f"字体保存成功: {output_path}")
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=original_ext) as output_temp:
+                output_path = output_temp.name
+                font.save(output_path)
+                logging.debug(f"字体保存成功: {output_path}")
+        except Exception as e:
+            logging.error(f"保存字体文件时出错: {str(e)}")
+            raise ValueError(f"无法保存处理后的字体: {str(e)}")
         
         # 计算文件大小
         original_size = os.path.getsize(input_path) / 1024
