@@ -856,7 +856,7 @@
                         resultDiv.innerHTML = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">处理失败</span>
-                            <span class="error-message">${error.message}</span>
+                            <span class="error-message">${error.message || (typeof error === 'object' ? JSON.stringify(error) : error)}</span>
                         `;
                         document.querySelector('.result-panel').appendChild(resultDiv);
                     }

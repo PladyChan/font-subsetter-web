@@ -2,39 +2,29 @@
   "version": 2,
   "builds": [
     {
-      "src": "wsgi.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.9",
-        "handler": "wsgi.py"
-      }
+      "src": "app.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "headers": {
-        "Cache-Control": "public, max-age=31536000, immutable"
-      },
       "dest": "/static/$1"
     },
     {
       "src": "/(.*)",
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Cache-Control": "public, max-age=0, must-revalidate"
-      },
-      "dest": "wsgi.py"
+      "dest": "app.py"
     }
   ],
-  "env": {
-    "PYTHONUNBUFFERED": "1",
-    "FLASK_ENV": "development",
-    "FLASK_DEBUG": "1",
-    "PYTHONPATH": "."
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 60,
+      "memory": 3008
+    }
   },
-  "regions": ["hkg1"]
+  "build": {
+    "env": {
+      "MAX_CONTENT_LENGTH": "104857600"
+    }
+  }
 } 
