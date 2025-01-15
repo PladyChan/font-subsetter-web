@@ -62,12 +62,15 @@ def process_font_file(input_path, options=None):
     """处理字体文件并返回结果"""
     try:
         # 加载字体文件
+        logging.debug(f"开始加载字体文件: {input_path}")
         font = TTFont(input_path)
+        logging.debug("字体文件加载成功")
         
         # 根据选项构建字符集
         chars = get_chars_by_options(options or {})
         if not chars:
             raise Exception("未选择任何字符集")
+        logging.debug(f"字符集构建成功，包含 {len(chars)} 个字符")
         
         # 设置 subsetter 选项
         subsetter_options = Options()
@@ -75,31 +78,47 @@ def process_font_file(input_path, options=None):
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.desubroutinize = True
+        logging.debug("Subsetter 选项设置完成")
         
         # 处理字体
         subsetter = Subsetter(options=subsetter_options)
-        subsetter.populate(unicodes=[ord(char) for char in chars])
+        logging.debug("开始填充字符集")
+        try:
+            unicodes = [ord(char) for char in chars]
+            logging.debug(f"Unicode 码点列表: {unicodes}")
+            subsetter.populate(unicodes=unicodes)
+            logging.debug("字符集填充成功")
+        except Exception as e:
+            logging.error(f"填充字符集时出错: {str(e)}")
+            raise
         
         try:
+            logging.debug("开始子集化处理")
             subsetter.subset(font)
+            logging.debug("子集化处理成功")
         except Exception as e:
-            logging.error(f"字体处理错误（第一次尝试）: {str(e)}")
+            logging.error(f"子集化处理出错（第一次尝试）: {str(e)}")
             # 如果出错，尝试不使用布局特性
+            logging.debug("尝试不使用布局特性进行处理")
             subsetter_options.layout_features = []
             subsetter_options.no_subset_tables += ['GSUB', 'GPOS']
             subsetter = Subsetter(options=subsetter_options)
-            subsetter.populate(unicodes=[ord(char) for char in chars])
+            subsetter.populate(unicodes=unicodes)
             subsetter.subset(font)
+            logging.debug("使用备用方案处理成功")
         
         # 使用临时文件保存输出
+        logging.debug("开始保存处理后的字体")
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(input_path)[1]) as output_temp:
             output_path = output_temp.name
             font.save(output_path)
+        logging.debug(f"字体保存成功: {output_path}")
         
         # 计算文件大小
         original_size = os.path.getsize(input_path) / 1024
         new_size = os.path.getsize(output_path) / 1024
         reduction = ((original_size - new_size) / original_size * 100)
+        logging.debug(f"文件大小: 原始={original_size:.1f}KB, 处理后={new_size:.1f}KB, 减少={reduction:.1f}%")
         
         return {
             'success': True,
@@ -112,4 +131,7 @@ def process_font_file(input_path, options=None):
         
     except Exception as e:
         logging.error(f"处理字体文件时出错: {str(e)}")
+        logging.error(f"错误类型: {type(e)}")
+        import traceback
+        logging.error(f"错误堆栈: {traceback.format_exc()}")
         raise Exception(f"处理字体文件时出错: {str(e)}") 
