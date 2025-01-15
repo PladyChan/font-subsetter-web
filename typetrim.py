@@ -23,18 +23,19 @@ def get_chars_by_options(options):
     
     # 基础字符
     if options.get('latin', False):
-        chars.update(string.ascii_letters)  # 英文字母
+        chars.update('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')  # 英文字母
     if options.get('numbers', False):
-        chars.update(string.digits)         # 数字
+        chars.update('0123456789')         # 数字
     if options.get('en_punctuation', False):
         # 英文标点和特殊符号
-        chars.update(',.!?;:\'\"()[]{}')
-        chars.update('@#$%^&*_+-=\\|/<>~`')
-        # 空格和制表符
-        chars.update(' \t')
+        chars.update(',.!?@#$%&*+-=/<>~')  # 常用英文标点和符号
+        chars.update('\'\"()[]{}')         # 引号和括号
+        chars.update(' ')                  # 空格
     if options.get('cn_punctuation', False):
         # 中文标点
-        chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
+        chars.update('，。！？、；：')      # 基础中文标点
+        chars.update('""''《》（）【】')   # 中文引号和括号
+        chars.update('…—')                # 省略号和破折号
     if options.get('chinese_common', False):
         # 常用汉字集（3500字）
         common_chars = (
@@ -50,29 +51,14 @@ def get_chars_by_options(options):
         chars.update(common_chars)
         
     if options.get('chinese_name', False):
-        # 人名用字集
-        name_chars = '华伟建国志明军平春江红波涛昌鹏飞龙强晓东海峰成荣新刚子杰超艳芳娟秀兰凤英丽娜静敏燕'
+        # 人名用字集（常用姓氏和名字用字）
+        name_chars = (
+            # 常用姓氏
+            '赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜'
+            # 常用名字用字
+            '伟建国志明军平春江红波涛昌鹏飞龙强晓东海峰成荣新刚子杰超艳芳娟秀兰凤英丽娜静敏燕'
+        )
         chars.update(name_chars)
-    
-    # 扩展字符
-    if options.get('currency', False):
-        chars.update('$€¥£¢')              # 货币符号
-    if options.get('math', False):
-        chars.update('+-×÷=≠<>≤≥°')         # 数学符号和度数符号
-    if options.get('copyright', False):
-        chars.update('©®™')                # 版权符号
-    if options.get('arrows', False):
-        chars.update('←→↑↓')               # 箭头
-    
-    # 特殊功能字符
-    if options.get('ligatures', False):
-        chars.update('ﬁﬂ')                # 连字
-    if options.get('fractions', False):
-        chars.update('½¼¾')               # 分数
-    if options.get('superscript', False):
-        chars.update('⁰¹²³⁴⁵⁶⁷⁸⁹')        # 上标
-    if options.get('diacritics', False):
-        chars.update('áàâäãåāéèêëēíìîïīóòôöõōúùûüūýÿ')  # 变音符号
     
     # 添加自定义字符
     if 'custom_chars' in options and options['custom_chars']:
@@ -107,17 +93,31 @@ def process_font_file(input_path, options=None):
         # 设置 subsetter 选项
         subsetter_options = Options()
         
-        # 针对中文字体的特殊处理
+        # 禁用所有可能产生变体的特性
+        subsetter_options.layout_features = []  # 禁用所有布局特性
+        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
+        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
+        subsetter_options.notdef_glyph = True  # 保留 .notdef 字形
+        subsetter_options.notdef_outline = True  # 保留 .notdef 轮廓
+        subsetter_options.recommended_glyphs = False  # 不包含推荐的字形
+        subsetter_options.hinting = True  # 保留 hinting 信息
+        
+        # 禁用所有可能导致变体的表
+        subsetter_options.no_subset_tables = [
+            'GSUB',  # 字形替换表（处理连字和变体）
+            'GPOS',  # 字形定位表
+            'kern',  # 字距调整
+            'mark',  # 标记定位
+            'mkmk',  # 标记到标记定位
+            'GDEF',  # 字形定义
+            'MATH',  # 数学排版
+        ]
+        
+        # 其他必要的选项
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.desubroutinize = True
-        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
-        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
-        subsetter_options.legacy_kern = True  # 保留传统字距调整
-        subsetter_options.symbol_cmap = True  # 支持符号字体
-        subsetter_options.recalc_bounds = True  # 重新计算边界
-        subsetter_options.recalc_timestamp = False  # 不重新计算时间戳
-        subsetter_options.retain_gids = True  # 保留原始字形ID
+        subsetter_options.retain_gids = True
         
         logging.debug(f"Subsetter 选项设置完成: {vars(subsetter_options)}")
         
@@ -129,7 +129,7 @@ def process_font_file(input_path, options=None):
             if not isinstance(chars, set) or not chars:
                 raise ValueError("字符集无效或为空")
             
-            # 转换字符到 Unicode 码点，特别处理中文字符
+            # 转换字符到 Unicode 码点
             unicodes = set()  # 使用集合去重
             for char in chars:
                 try:
@@ -138,9 +138,6 @@ def process_font_file(input_path, options=None):
                         char_encoded = char.encode('utf-8').decode('utf-8')
                         unicode_value = ord(char_encoded)
                         unicodes.add(unicode_value)
-                        # 如果是中文字符，添加相关的变体
-                        if 0x4E00 <= unicode_value <= 0x9FFF:  # CJK统一汉字范围
-                            logging.debug(f"处理中文字符: {char} (U+{unicode_value:04X})")
                     else:
                         logging.warning(f"跳过无效字符: {char}")
                 except (TypeError, ValueError, UnicodeError) as e:
@@ -154,12 +151,6 @@ def process_font_file(input_path, options=None):
             unicodes = sorted(list(unicodes))
             logging.debug(f"Unicode 码点列表（前10个）: {[hex(u) for u in unicodes[:10]]}...")
             
-            # 设置字体子集化选项
-            subsetter_options.layout_features = ['*']  # 保留所有布局特性
-            subsetter_options.glyph_names = True  # 保留字形名称
-            subsetter_options.recommended_glyphs = True  # 包含推荐的字形
-            subsetter_options.hinting = True  # 保留 hinting 信息
-            
             subsetter.populate(unicodes=unicodes)
             logging.debug("字符集填充成功")
         except Exception as e:
@@ -168,46 +159,11 @@ def process_font_file(input_path, options=None):
         
         try:
             logging.debug("开始子集化处理")
-            # 检查字体是否支持中文
-            if any(0x4E00 <= u <= 0x9FFF for u in unicodes):
-                logging.debug("检测到中文字符，使用中文字体处理模式")
-                # 保留所有中文相关的表
-                subsetter_options.no_subset_tables += [
-                    'GSUB', 'GPOS', 'kern', 
-                    'GDEF', 'BASE', 'JSTF',
-                    'DSIG', 'gasp', 'hdmx', 'LTSH',
-                    'PCLT', 'VDMX', 'vhea', 'vmtx'
-                ]
-            
             subsetter.subset(font)
             logging.debug("子集化处理成功")
         except Exception as e:
             logging.error(f"子集化处理出错: {str(e)}")
-            logging.debug("尝试使用备用方案处理")
-            
-            # 重置选项，使用更保守的设置
-            subsetter_options = Options()
-            subsetter_options.ignore_missing_glyphs = True
-            subsetter_options.ignore_missing_unicodes = True
-            subsetter_options.desubroutinize = False  # 禁用字形优化
-            subsetter_options.no_subset_tables = ['*']  # 保留所有表
-            subsetter_options.retain_gids = True
-            subsetter_options.legacy_kern = True
-            subsetter_options.name_IDs = ['*']
-            subsetter_options.name_languages = ['*']
-            subsetter_options.obfuscate_names = False
-            subsetter_options.notdef_glyph = True
-            subsetter_options.notdef_outline = True
-            subsetter_options.recommended_glyphs = True
-            
-            try:
-                subsetter = Subsetter(options=subsetter_options)
-                subsetter.populate(unicodes=unicodes)
-                subsetter.subset(font)
-                logging.debug("使用备用方案处理成功")
-            except Exception as backup_error:
-                logging.error(f"备用方案也失败: {str(backup_error)}")
-                raise ValueError(f"字体处理失败: {str(e)}\n备用方案失败: {str(backup_error)}")
+            raise ValueError(f"字体处理失败: {str(e)}")
         
         # 恢复原始字体名称信息
         if 'name' in font and original_names:
