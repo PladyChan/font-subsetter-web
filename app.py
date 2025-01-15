@@ -67,12 +67,15 @@ def process_font():
         return jsonify({'error': '未选择文件'}), 400
     
     try:
+        # 保存原始文件名
+        original_filename = font_file.filename
+        
         # 获取选项
         options = json.loads(request.form.get('options', '{}'))
         logging.debug(f"接收到的选项: {options}")
         
         # 使用临时文件保存上传的字体
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(font_file.filename)[1]) as input_temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(original_filename)[1]) as input_temp:
             font_file.save(input_temp.name)
             input_path = input_temp.name
             
@@ -101,8 +104,9 @@ def process_font():
         # 清理输入临时文件
         os.unlink(input_path)
         
-        # 添加下载链接到结果
-        result['download_url'] = f"/download/{os.path.basename(result['output_path'])}"
+        # 添加下载链接到结果，使用原始文件名
+        result['download_url'] = f"/download/{os.path.basename(result['output_path'])}?original_name={original_filename}"
+        result['filename'] = original_filename
         
         return jsonify(result)
         
@@ -129,6 +133,9 @@ def process_font():
 @app.route('/download/<filename>')
 def download(filename):
     try:
+        # 获取原始文件名
+        original_name = request.args.get('original_name', filename)
+        
         # 从临时存储获取文件
         temp_path = os.path.join(get_temp_dir(), filename)
         if not os.path.exists(temp_path):
@@ -138,7 +145,7 @@ def download(filename):
             temp_path,
             as_attachment=True,
             mimetype='font/ttf',
-            download_name=os.path.basename(filename)
+            download_name=original_name  # 使用原始文件名
         )
         
         # 文件发送后删除临时文件
