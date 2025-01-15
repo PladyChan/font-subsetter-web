@@ -148,7 +148,7 @@ def process_font():
             'stack_trace': stack_trace
         }), 500
 
-@app.route('/download/<filename>')
+@app.route('/download/<path:filename>', methods=['GET'])
 def download(filename):
     try:
         # 获取原始文件名
