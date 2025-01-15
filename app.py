@@ -67,17 +67,17 @@ def process_font():
         return jsonify({'error': '未选择文件'}), 400
     
     try:
-        # 获取自定义字符
+        # 获取选项
         options = json.loads(request.form.get('options', '{}'))
-        custom_chars = options.get('customChars', '')
+        logging.debug(f"接收到的选项: {options}")
         
         # 使用临时文件保存上传的字体
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(font_file.filename)[1]) as input_temp:
             font_file.save(input_temp.name)
             input_path = input_temp.name
             
-        # 使用 TypeTrim 处理字体，传入自定义字符
-        result = process_font_file(input_path, {'custom_chars': custom_chars})
+        # 使用 TypeTrim 处理字体，传入选项
+        result = process_font_file(input_path, options)
         
         # 清理输入临时文件
         os.unlink(input_path)
