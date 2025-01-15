@@ -106,58 +106,41 @@ def process_font_file(input_path, options=None):
         # 设置 subsetter 选项
         subsetter_options = Options()
         
-        # 只保留基本的布局特性
-        subsetter_options.layout_features = [
-            # 保留基本的字距调整
-            'kern',      # 字距调整
-            'dist',      # 距离调整
-            # 保留基本的标记定位
-            'mark',      # 标记定位
-            'mkmk',      # 标记到标记定位
+        # 只保留最基本的布局特性
+        subsetter_options.layout_features = []  # 禁用所有布局特性
+        
+        # 禁用所有变体和空格相关的特性
+        subsetter_options.layout_features_exclude = [
+            'liga', 'dlig', 'hlig', 'clig', 'rlig',  # 连字
+            'calt', 'sups', 'subs', 'numr', 'dnom',  # 数字变体
+            'frac', 'afrc', 'ordn',                  # 分数和序数
+            'lnum', 'onum', 'pnum', 'tnum',          # 数字样式
+            'ss01', 'ss02', 'ss03', 'ss04', 'ss05',  # 风格集
+            'salt', 'swsh', 'cswh', 'ornm',          # 装饰变体
+            'nalt', 'hist', 'zero', 'case',          # 其他变体
+            'cpsp', 'kern',                          # 字距调整
+            'mark', 'mkmk',                          # 标记定位
+            'locl',                                  # 本地化
+            'ccmp',                                  # 字形组合
+            'dist',                                  # 距离调整
+            'abvm', 'blwm',                          # 上下标记
+            'aalt',                                  # 访问所有变体
         ]
         
-        # 禁用所有变体和连字相关的特性
-        subsetter_options.layout_features_exclude = [
-            'liga',      # 标准连字
-            'dlig',      # 自由连字
-            'hlig',      # 历史连字
-            'clig',      # 上下文连字
-            'rlig',      # 必需连字
-            'calt',      # 上下文替换
-            'sups',      # 上标
-            'subs',      # 下标
-            'numr',      # 分数分子
-            'dnom',      # 分数分母
-            'frac',      # 分数
-            'afrc',      # 替代分数
-            'ordn',      # 序数
-            'lnum',      # 大写数字
-            'onum',      # 小写数字
-            'pnum',      # 比例数字
-            'tnum',      # 表格数字
-            'ss01',      # 风格集 1
-            'ss02',      # 风格集 2
-            'ss03',      # 风格集 3
-            'ss04',      # 风格集 4
-            'ss05',      # 风格集 5
-            'salt',      # 风格替换
-            'swsh',      # 花体变体
-            'cswh',      # 上下文花体
-            'ornm',      # 装饰变体
-            'nalt',      # 替代注释形式
-            'hist',      # 历史形式
-            'zero',      # 斜线零
-            'case',      # 大小写敏感形式
+        # 禁用不必要的表
+        subsetter_options.drop_tables += [
+            'GPOS',  # 禁用高级定位
+            'GSUB',  # 禁用字形替换
         ]
         
         # 其他必要的选项
-        subsetter_options.name_IDs = ['*']  # 保留所有名称记录
-        subsetter_options.name_languages = ['*']  # 保留所有语言的名称
-        subsetter_options.notdef_glyph = True  # 保留 .notdef 字形
-        subsetter_options.notdef_outline = True  # 保留 .notdef 轮廓
-        subsetter_options.recommended_glyphs = True  # 包含推荐的字形
-        subsetter_options.hinting = True  # 保留 hinting 信息
-        subsetter_options.legacy_kern = True  # 保留传统字距调整
+        subsetter_options.name_IDs = ['*']
+        subsetter_options.name_languages = ['*']
+        subsetter_options.notdef_glyph = True
+        subsetter_options.notdef_outline = True
+        subsetter_options.recommended_glyphs = False  # 禁用推荐字形
+        subsetter_options.hinting = True
+        subsetter_options.legacy_kern = False  # 禁用传统字距调整
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.retain_gids = True
