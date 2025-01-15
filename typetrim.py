@@ -17,6 +17,40 @@ import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
+def get_chars_by_options(options):
+    """根据选项返回需要保留的字符集"""
+    chars = set()
+    
+    # 基础字符
+    if options.get('latin', False):
+        chars.update(string.ascii_letters)  # 英文字母
+    if options.get('numbers', False):
+        chars.update(string.digits)         # 数字
+    if options.get('punctuation', False):
+        chars.update(string.punctuation)    # 标点符号
+    if options.get('degree', False):
+        chars.add('°')                      # 度数符号
+    
+    # 扩展字符
+    if options.get('currency', False):
+        chars.update('$€¥£')               # 货币符号
+    if options.get('math', False):
+        chars.update('+-×÷=')              # 数学符号
+    if options.get('copyright', False):
+        chars.update('©®™')                # 版权符号
+    if options.get('arrows', False):
+        chars.update('←→↑↓')               # 箭头
+    
+    # 特殊功能字符
+    if options.get('diacritics', False):
+        chars.update('éèêëāīūēīō')         # 变音符号
+    
+    # 添加自定义字符
+    if 'custom_chars' in options:
+        chars.update(options['custom_chars'])
+    
+    return chars
+
 def process_font_file(input_path, options=None):
     """处理字体文件并返回结果"""
     try:
@@ -24,24 +58,8 @@ def process_font_file(input_path, options=None):
         font = TTFont(input_path)
         
         # 根据选项构建字符集
-        chars = set()
-        
-        # 基础字符
-        chars.update(string.ascii_letters)  # 英文字母
-        chars.update(string.digits)         # 数字
-        chars.update(string.punctuation)    # 标点符号
-        chars.add('°')                      # 度数符号
-        
-        # 扩展字符
-        chars.update('$€¥£')               # 货币符号
-        chars.update('+-×÷=')              # 数学符号
-        chars.update('©®™')                # 版权符号
-        chars.update('←→↑↓')               # 箭头
-        chars.update('éèêëāīūēīō')         # 变音符号
-        
-        # 添加自定义字符
-        if options and 'custom_chars' in options:
-            chars.update(options['custom_chars'])
+        chars = get_chars_by_options(options or {})
+        logging.debug(f"生成的字符集: {chars}")
         
         # 设置 subsetter 选项
         subsetter_options = Options()
