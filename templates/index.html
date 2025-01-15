@@ -620,6 +620,19 @@
         const result = document.getElementById('result');
         const sizeInfo = document.getElementById('size-info');
         
+        // 添加错误处理函数
+        function showError(message) {
+            const resultPanel = document.querySelector('.result-panel');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result-item error';
+            resultDiv.innerHTML = `
+                <span class="filename">错误</span>
+                <span class="status error">处理失败</span>
+                <span class="error-message">${message}</span>
+            `;
+            resultPanel.appendChild(resultDiv);
+        }
+        
         function updateFileList() {
             fileList.innerHTML = '';
             currentFiles.forEach(file => {
@@ -690,19 +703,6 @@
             handleFiles(this.files);
         });
         
-        // 添加错误处理函数
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.textContent = message;
-            document.querySelector('.result-panel').appendChild(errorDiv);
-            
-            // 3秒后自动移除错误消息
-            setTimeout(() => {
-                errorDiv.remove();
-            }, 3000);
-        }
-        
         // 处理文件处理
         processBtn.addEventListener('click', async () => {
             try {
@@ -736,12 +736,11 @@
                             body: formData
                         });
                         
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || '处理失败');
-                        }
-                        
                         const data = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(data.error || '处理失败');
+                        }
                         
                         // 显示处理结果
                         const resultDiv = document.createElement('div');
