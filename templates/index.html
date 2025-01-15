@@ -713,13 +713,33 @@
                 let processed = 0;
                 
                 // 收集所有选项
-                const options = {};
+                const options = {
+                    latin: false,
+                    numbers: false,
+                    punctuation: false,
+                    degree: false,
+                    currency: false,
+                    math: false,
+                    copyright: false,
+                    arrows: false,
+                    ligatures: false,
+                    fractions: false,
+                    superscript: false,
+                    diacritics: false
+                };
+                
+                // 更新选项状态
                 document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    options[checkbox.value] = checkbox.checked;
+                    if (checkbox.checked) {
+                        options[checkbox.value] = true;
+                    }
                 });
                 
                 // 添加自定义字符
-                options.customChars = document.getElementById('customChars').value;
+                const customChars = document.getElementById('customChars').value;
+                if (customChars) {
+                    options.custom_chars = customChars;
+                }
                 
                 console.log('选项状态:', options);
                 
