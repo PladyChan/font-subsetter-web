@@ -111,8 +111,14 @@ def process_font():
             font_file.save(input_temp.name)
             input_path = input_temp.name
             
-        # 使用 TypeTrim 处理字体，传入字符集
-        result = process_font_file(input_path, chars_to_keep)
+        try:
+            # 使用 TypeTrim 处理字体，传入字符集
+            logging.debug(f"开始处理字体文件: {input_path}")
+            result = process_font_file(input_path, chars_to_keep)
+            logging.debug(f"字体处理结果: {result}")
+        except Exception as e:
+            logging.error(f"字体处理错误: {str(e)}")
+            raise
         
         # 清理输入临时文件
         os.unlink(input_path)
@@ -123,6 +129,7 @@ def process_font():
         return jsonify(result)
         
     except Exception as e:
+        logging.error(f"处理过程发生错误: {str(e)}")
         # 确保清理临时文件
         if 'input_path' in locals():
             try:
