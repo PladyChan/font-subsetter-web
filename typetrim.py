@@ -27,7 +27,14 @@ def get_chars_by_options(options):
     if options.get('numbers', False):
         chars.update(string.digits)         # 数字
     if options.get('punctuation', False):
-        chars.update(',.!?;:\'\"()[]{}')   # 标点符号
+        # 英文标点
+        chars.update(',.!?;:\'\"()[]{}')
+        # 中文标点
+        chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
+        # 常用特殊符号
+        chars.update('@#$%^&*_+-=\\|/<>~`')
+        # 空格和制表符
+        chars.update(' \t')
     if options.get('degree', False):
         chars.add('°')                      # 度数符号
     if options.get('chinese_common', False):
