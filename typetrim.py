@@ -128,13 +128,29 @@ def process_font_file(input_path, options=None):
         subsetter = Subsetter(options=subsetter_options)
         logging.debug("开始填充字符集")
         try:
-            unicodes = [ord(char) for char in chars]
+            # 验证字符集
+            if not isinstance(chars, set) or not chars:
+                raise ValueError("字符集无效或为空")
+            
+            # 转换字符到 Unicode 码点
+            unicodes = []
+            for char in chars:
+                try:
+                    unicode_value = ord(char)
+                    unicodes.append(unicode_value)
+                except TypeError as e:
+                    logging.error(f"无法转换字符 '{char}' 到 Unicode: {str(e)}")
+                    continue
+            
+            if not unicodes:
+                raise ValueError("没有有效的 Unicode 字符")
+                
             logging.debug(f"Unicode 码点列表: {unicodes}")
             subsetter.populate(unicodes=unicodes)
             logging.debug("字符集填充成功")
         except Exception as e:
             logging.error(f"填充字符集时出错: {str(e)}")
-            raise
+            raise ValueError(f"字符集处理失败: {str(e)}")
         
         try:
             logging.debug("开始子集化处理")
