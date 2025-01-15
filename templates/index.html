@@ -422,6 +422,68 @@
             font-size: 16px;
             transition: all 0.2s;
         }
+        
+        .result-panel {
+            margin-top: 20px;
+        }
+        
+        .result-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .result-item.error {
+            border-color: #ff4444;
+        }
+        
+        .result-item .filename {
+            font-weight: 500;
+        }
+        
+        .result-item .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .result-item .status.success {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+        
+        .result-item .status.error {
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+        }
+        
+        .result-item .error-message {
+            color: #ff4444;
+            margin-left: 12px;
+        }
+        
+        .result-item .download-btn {
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .result-item .download-btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        
+        .option-group {
+        }
     </style>
 </head>
 <body>
@@ -458,6 +520,8 @@
             <div class="button-group">
                 <button class="button" id="process-btn" disabled>开始处理</button>
             </div>
+            
+            <div class="result-panel"></div>
             
             <div id="result" style="display: none;">
                 <div id="size-info"></div>
