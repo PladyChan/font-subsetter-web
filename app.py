@@ -71,50 +71,18 @@ def process_font():
         options = json.loads(request.form.get('options', '{}'))
         logging.debug(f"接收到的选项: {options}")
         
-        # 构建要保留的字符集
-        chars_to_keep = set()
-        
-        # 根据选项添加相应的字符
-        if options.get('latin'):
-            chars_to_keep.update('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-        if options.get('numbers'):
-            chars_to_keep.update('0123456789')
-        if options.get('punctuation'):
-            chars_to_keep.update(',.!?;:\'\"()[]{}')
-        if options.get('degree'):
-            chars_to_keep.update('°')
-        if options.get('currency'):
-            chars_to_keep.update('$€¥£¢')
-        if options.get('math'):
-            chars_to_keep.update('+-×÷=≠<>≤≥')
-        if options.get('copyright'):
-            chars_to_keep.update('©®™')
-        if options.get('arrows'):
-            chars_to_keep.update('←→↑↓')
-        if options.get('ligatures'):
-            chars_to_keep.update('ﬁﬂ')
-        if options.get('fractions'):
-            chars_to_keep.update('½¼¾')
-        if options.get('superscript'):
-            chars_to_keep.update('⁰¹²³⁴⁵⁶⁷⁸⁹')
-        if options.get('diacritics'):
-            chars_to_keep.update('áàâäãåāéèêëēíìîïīóòôöõōúùûüūýÿ')
-            
-        # 添加自定义字符
-        if 'customChars' in options and options['customChars']:
-            chars_to_keep.update(options['customChars'])
-            
-        logging.debug(f"生成的字符集: {chars_to_keep}")
-        
         # 使用临时文件保存上传的字体
         with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(font_file.filename)[1]) as input_temp:
             font_file.save(input_temp.name)
             input_path = input_temp.name
             
         try:
-            # 使用 TypeTrim 处理字体，传入字符集
+            # 使用 TypeTrim 处理字体，传入选项
             logging.debug(f"开始处理字体文件: {input_path}")
-            result = process_font_file(input_path, chars_to_keep)
+            # 将 customChars 转换为 custom_chars
+            if 'customChars' in options:
+                options['custom_chars'] = options.pop('customChars')
+            result = process_font_file(input_path, options)
             logging.debug(f"字体处理结果: {result}")
         except Exception as e:
             logging.error(f"字体处理错误: {str(e)}")
