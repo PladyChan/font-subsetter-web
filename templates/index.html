@@ -782,7 +782,7 @@
                 // 添加自定义字符
                 const customChars = document.getElementById('customChars').value;
                 if (customChars) {
-                    options.custom_chars = customChars;
+                    options.customChars = customChars;
                 }
                 
                 console.log('选项状态:', options);
@@ -795,16 +795,24 @@
                     progress.textContent = `${Math.round((processed / currentFiles.size) * 100)}%`;
                     
                     try {
+                        console.log('开始处理文件:', file.name);
+                        console.log('文件大小:', file.size);
+                        
                         const response = await fetch('/process', {
                             method: 'POST',
-                            body: formData
+                            body: formData,
+                            headers: {
+                                'Accept': 'application/json'
+                            }
                         });
                         
-                        const data = await response.json();
-                        
                         if (!response.ok) {
-                            throw new Error(data.error || '处理失败');
+                            const errorData = await response.json();
+                            throw new Error(errorData.error || `处理失败 (${response.status})`);
                         }
+                        
+                        const data = await response.json();
+                        console.log('处理结果:', data);
                         
                         // 显示处理结果
                         const resultDiv = document.createElement('div');
@@ -835,13 +843,14 @@
                         if (data.download_url) {
                             const link = document.createElement('a');
                             link.href = data.download_url;
-                            link.download = data.filename || file.name;
+                            link.download = file.name;  // 使用原始文件名
                             document.body.appendChild(link);
                             link.click();
                             document.body.removeChild(link);
                         }
                         
                     } catch (error) {
+                        console.error('处理文件时出错:', error);
                         const resultDiv = document.createElement('div');
                         resultDiv.className = 'result-item error';
                         resultDiv.innerHTML = `
@@ -856,6 +865,7 @@
                 }
                 
             } catch (error) {
+                console.error('整体处理过程出错:', error);
                 showError('处理过程中出错：' + error.message);
             } finally {
                 progress.style.display = 'none';
