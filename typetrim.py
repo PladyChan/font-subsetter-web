@@ -102,21 +102,22 @@ def process_font_file(input_path, options=None):
         subsetter_options.recommended_glyphs = False  # 不包含推荐的字形
         subsetter_options.hinting = True  # 保留 hinting 信息
         
-        # 禁用所有可能导致变体的表
+        # 禁用变体相关的表，但保留必要的基础表
         subsetter_options.no_subset_tables = [
             'GSUB',  # 字形替换表（处理连字和变体）
             'GPOS',  # 字形定位表
             'kern',  # 字距调整
             'mark',  # 标记定位
             'mkmk',  # 标记到标记定位
-            'GDEF',  # 字形定义
-            'MATH',  # 数学排版
         ]
+        
+        # 保留必要的表
+        subsetter_options.drop_tables = []  # 不删除任何表
         
         # 其他必要的选项
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
-        subsetter_options.desubroutinize = True
+        subsetter_options.desubroutinize = False  # 禁用字形优化以避免潜在问题
         subsetter_options.retain_gids = True
         
         logging.debug(f"Subsetter 选项设置完成: {vars(subsetter_options)}")
