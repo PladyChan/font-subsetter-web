@@ -27,28 +27,35 @@ def get_chars_by_options(options):
     if options.get('numbers', False):
         chars.update(string.digits)         # 数字
     if options.get('punctuation', False):
-        chars.update(string.punctuation)    # 标点符号
+        chars.update(',.!?;:\'\"()[]{}')   # 标点符号
     if options.get('degree', False):
         chars.add('°')                      # 度数符号
     
     # 扩展字符
     if options.get('currency', False):
-        chars.update('$€¥£')               # 货币符号
+        chars.update('$€¥£¢')              # 货币符号
     if options.get('math', False):
-        chars.update('+-×÷=')              # 数学符号
+        chars.update('+-×÷=≠<>≤≥')         # 数学符号
     if options.get('copyright', False):
         chars.update('©®™')                # 版权符号
     if options.get('arrows', False):
         chars.update('←→↑↓')               # 箭头
     
     # 特殊功能字符
+    if options.get('ligatures', False):
+        chars.update('ﬁﬂ')                # 连字
+    if options.get('fractions', False):
+        chars.update('½¼¾')               # 分数
+    if options.get('superscript', False):
+        chars.update('⁰¹²³⁴⁵⁶⁷⁸⁹')        # 上标
     if options.get('diacritics', False):
-        chars.update('éèêëāīūēīō')         # 变音符号
+        chars.update('áàâäãåāéèêëēíìîïīóòôöõōúùûüūýÿ')  # 变音符号
     
     # 添加自定义字符
-    if 'custom_chars' in options:
+    if 'custom_chars' in options and options['custom_chars']:
         chars.update(options['custom_chars'])
     
+    logging.debug(f"生成的字符集: {chars}")
     return chars
 
 def process_font_file(input_path, options=None):
@@ -59,7 +66,8 @@ def process_font_file(input_path, options=None):
         
         # 根据选项构建字符集
         chars = get_chars_by_options(options or {})
-        logging.debug(f"生成的字符集: {chars}")
+        if not chars:
+            raise Exception("未选择任何字符集")
         
         # 设置 subsetter 选项
         subsetter_options = Options()
@@ -75,6 +83,7 @@ def process_font_file(input_path, options=None):
         try:
             subsetter.subset(font)
         except Exception as e:
+            logging.error(f"字体处理错误（第一次尝试）: {str(e)}")
             # 如果出错，尝试不使用布局特性
             subsetter_options.layout_features = []
             subsetter_options.no_subset_tables += ['GSUB', 'GPOS']
@@ -92,9 +101,6 @@ def process_font_file(input_path, options=None):
         new_size = os.path.getsize(output_path) / 1024
         reduction = ((original_size - new_size) / original_size * 100)
         
-        logging.debug(f"接收到的选项: {options}")
-        logging.debug(f"生成的字符集: {chars}")
-        
         return {
             'success': True,
             'filename': os.path.basename(input_path),
@@ -105,4 +111,5 @@ def process_font_file(input_path, options=None):
         }
         
     except Exception as e:
+        logging.error(f"处理字体文件时出错: {str(e)}")
         raise Exception(f"处理字体文件时出错: {str(e)}") 
