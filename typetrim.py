@@ -128,11 +128,11 @@ def process_font_file(input_path, options=None):
             'STAT',  # 禁用样式属性
         ]
         
-        # 最小化选项
+        # 最小化选项，但保留必要的组件
         subsetter_options.name_IDs = ['1', '2']  # 只保留基本名称记录
         subsetter_options.name_languages = ['0x0409']  # 只保留英文
-        subsetter_options.notdef_glyph = False  # 不保留 .notdef 字形
-        subsetter_options.notdef_outline = False  # 不保留 .notdef 轮廓
+        subsetter_options.notdef_glyph = True  # 保留 .notdef 字形
+        subsetter_options.notdef_outline = True  # 保留 .notdef 轮廓
         subsetter_options.recommended_glyphs = False  # 禁用推荐字形
         subsetter_options.hinting = False  # 禁用 hinting
         subsetter_options.legacy_kern = False  # 禁用传统字距调整
