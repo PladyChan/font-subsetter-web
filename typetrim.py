@@ -57,7 +57,7 @@ def get_chars_by_options(options):
     if options.get('currency', False):
         chars.update('$€¥£¢')              # 货币符号
     if options.get('math', False):
-        chars.update('+-×÷=≠<>≤≥°')         # 数学符号和度数符号
+        chars.update('+-×÷=≠<>≤≥°')         # 数学符号
     if options.get('copyright', False):
         chars.update('©®™')                # 版权符号
     if options.get('arrows', False):
@@ -74,8 +74,8 @@ def get_chars_by_options(options):
         chars.update('áàâäãåāéèêëēíìîïīóòôöõōúùûüūýÿ')  # 变音符号
     
     # 添加自定义字符
-    if 'custom_chars' in options and options['custom_chars']:
-        chars.update(options['custom_chars'])
+    if 'customChars' in options and options['customChars']:
+        chars.update(options['customChars'])
     
     logging.debug(f"生成的字符集: {chars}")
     return chars

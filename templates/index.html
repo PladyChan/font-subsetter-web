@@ -755,28 +755,11 @@
                 let processed = 0;
                 
                 // 收集所有选项
-                const options = {
-                    latin: false,
-                    numbers: false,
-                    en_punctuation: false,
-                    cn_punctuation: false,
-                    chinese_common: false,
-                    chinese_name: false,
-                    currency: false,
-                    math: false,
-                    copyright: false,
-                    arrows: false,
-                    ligatures: false,
-                    fractions: false,
-                    superscript: false,
-                    diacritics: false
-                };
+                const options = {};
                 
-                // 更新选项状态
+                // 获取所有复选框的状态
                 document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    if (checkbox.checked) {
-                        options[checkbox.value] = true;
-                    }
+                    options[checkbox.name] = checkbox.checked;
                 });
                 
                 // 添加自定义字符
@@ -800,10 +783,7 @@
                         
                         const response = await fetch('/process', {
                             method: 'POST',
-                            body: formData,
-                            headers: {
-                                'Accept': 'application/json'
-                            }
+                            body: formData
                         });
                         
                         if (!response.ok) {
