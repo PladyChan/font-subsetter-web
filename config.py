@@ -4,18 +4,25 @@ import tempfile
 def get_config():
     """获取默认配置"""
     return {
-        'latin': True,        # 英文字母
-        'numbers': True,      # 数字
-        'punctuation': True,  # 标点符号
-        'degree': True,       # 度数符号
-        'currency': True,     # 货币符号
-        'math': True,         # 数学符号
-        'copyright': True,    # 版权符号
-        'arrows': True,       # 箭头
-        'ligatures': True,    # 连字
-        'fractions': True,    # 分数
-        'superscript': True,  # 上标下标
-        'diacritics': True    # 变音符号
+        # 基础字符（默认选中）
+        'latin': True,            # 英文字母
+        'numbers': True,          # 数字
+        'en_punctuation': True,   # 英文标点
+        'cn_punctuation': False,  # 中文标点
+        'chinese_common': False,  # 常用汉字
+        'chinese_name': False,    # 人名用字
+        
+        # 扩展字符（部分默认选中）
+        'currency': True,         # 货币符号
+        'math': True,            # 数学符号
+        'copyright': False,       # 版权符号
+        'arrows': False,         # 箭头
+        
+        # 特殊功能（默认关闭）
+        'ligatures': False,      # 连字
+        'fractions': False,      # 分数
+        'superscript': False,    # 上标
+        'diacritics': False      # 变音符号
     }
 
 class Config:
