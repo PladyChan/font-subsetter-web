@@ -106,44 +106,41 @@ def process_font_file(input_path, options=None):
         # 设置 subsetter 选项
         subsetter_options = Options()
         
-        # 只保留最基本的布局特性
-        subsetter_options.layout_features = []  # 禁用所有布局特性
+        # 完全禁用所有布局特性
+        subsetter_options.layout_features = []
+        subsetter_options.layout_features_exclude = ['*']  # 禁用所有特性
         
-        # 禁用所有变体和空格相关的特性
-        subsetter_options.layout_features_exclude = [
-            'liga', 'dlig', 'hlig', 'clig', 'rlig',  # 连字
-            'calt', 'sups', 'subs', 'numr', 'dnom',  # 数字变体
-            'frac', 'afrc', 'ordn',                  # 分数和序数
-            'lnum', 'onum', 'pnum', 'tnum',          # 数字样式
-            'ss01', 'ss02', 'ss03', 'ss04', 'ss05',  # 风格集
-            'salt', 'swsh', 'cswh', 'ornm',          # 装饰变体
-            'nalt', 'hist', 'zero', 'case',          # 其他变体
-            'cpsp', 'kern',                          # 字距调整
-            'mark', 'mkmk',                          # 标记定位
-            'locl',                                  # 本地化
-            'ccmp',                                  # 字形组合
-            'dist',                                  # 距离调整
-            'abvm', 'blwm',                          # 上下标记
-            'aalt',                                  # 访问所有变体
-        ]
-        
-        # 禁用不必要的表
-        subsetter_options.drop_tables += [
+        # 禁用所有可能的表
+        subsetter_options.drop_tables = [
             'GPOS',  # 禁用高级定位
             'GSUB',  # 禁用字形替换
+            'kern',  # 禁用字距调整
+            'morx',  # 禁用扩展变形
+            'feat',  # 禁用布局特性
+            'lcar',  # 禁用连字调整
+            'gvar',  # 禁用字形变化
+            'cvar',  # 禁用CVT变化
+            'JSTF',  # 禁用对齐
+            'MATH',  # 禁用数学排版
+            'COLR',  # 禁用颜色
+            'CPAL',  # 禁用调色板
+            'sbix',  # 禁用位图
+            'STAT',  # 禁用样式属性
         ]
         
-        # 其他必要的选项
-        subsetter_options.name_IDs = ['*']
-        subsetter_options.name_languages = ['*']
-        subsetter_options.notdef_glyph = True
-        subsetter_options.notdef_outline = True
+        # 最小化选项
+        subsetter_options.name_IDs = ['1', '2']  # 只保留基本名称记录
+        subsetter_options.name_languages = ['0x0409']  # 只保留英文
+        subsetter_options.notdef_glyph = False  # 不保留 .notdef 字形
+        subsetter_options.notdef_outline = False  # 不保留 .notdef 轮廓
         subsetter_options.recommended_glyphs = False  # 禁用推荐字形
-        subsetter_options.hinting = True
+        subsetter_options.hinting = False  # 禁用 hinting
         subsetter_options.legacy_kern = False  # 禁用传统字距调整
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
-        subsetter_options.retain_gids = True
+        subsetter_options.retain_gids = False  # 不保留原始字形ID
+        subsetter_options.desubroutinize = True  # 优化字形轮廓
+        subsetter_options.no_subset_tables += ['prep', 'gasp', 'DSIG']  # 不处理这些表
         
         logging.debug(f"Subsetter 选项设置完成: {vars(subsetter_options)}")
         
