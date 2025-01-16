@@ -8,9 +8,6 @@ def get_config():
         'latin': True,            # 英文字母
         'numbers': True,          # 数字
         'en_punctuation': True,   # 英文标点
-        'cn_punctuation': False,  # 中文标点
-        'chinese_common': False,  # 常用汉字
-        'chinese_name': False,    # 人名用字
         
         # 扩展字符（部分默认选中）
         'currency': True,         # 货币符号
@@ -21,7 +18,7 @@ def get_config():
         # 特殊功能（默认关闭）
         'ligatures': False,      # 连字
         'fractions': False,      # 分数
-        'superscript': False,    # 上标
+        'superscript': False,    # 上标下标
         'diacritics': False      # 变音符号
     }
 
