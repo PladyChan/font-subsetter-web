@@ -5,8 +5,8 @@
       "src": "wsgi.py",
       "use": "@vercel/python",
       "config": {
-        "maxLambdaSize": "15mb",
-        "runtime": "python3.9",
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.11",
         "handler": "wsgi.py"
       }
     }
@@ -32,8 +32,8 @@
   ],
   "env": {
     "PYTHONUNBUFFERED": "1",
-    "FLASK_ENV": "development",
-    "FLASK_DEBUG": "1",
+    "FLASK_ENV": "production",
+    "FLASK_DEBUG": "0",
     "PYTHONPATH": "."
   },
   "regions": ["hkg1"]
