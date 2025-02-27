@@ -8,448 +8,149 @@
     <link rel="shortcut icon" href="static/favicon.ico">
     <style>
         :root {
-            --bg-color: #000000;
-            --card-bg: #111111;
-            --nav-bg: rgba(255, 255, 255, 0.04);
-            --primary: #5E6AD2;
-            --primary-hover: #7C5CFF;
-            --text: #FFFFFF;
-            --text-secondary: rgba(255, 255, 255, 0.6);
-            --border: rgba(255, 255, 255, 0.1);
-            --success: #4CAF50;
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --primary-light: #C8E6C9;
+            --accent: #FF5722;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --background: #121212;
+            --surface: #1E1E1E;
+            --error: #CF6679;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text);
+            font-family: 'Roboto', sans-serif;
             margin: 0;
             padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 64px;
-            background: var(--nav-bg);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding: 0 40px;
-            z-index: 100;
-        }
-        
-        .nav-brand {
-            font-size: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-        }
-        
-        .nav-brand span {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .hero {
-            margin-top: 120px;
-            text-align: center;
-            padding: 0 20px;
-        }
-        
-        .hero h1 {
-            font-size: 64px;
-            font-weight: 600;
-            line-height: 1.2;
-            margin: 0;
-            background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.7));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .hero p {
-            font-size: 20px;
-            color: var(--text-secondary);
-            margin: 24px auto;
-            max-width: 600px;
-            line-height: 1.6;
+            background-color: var(--background);
+            color: var(--text-primary);
         }
         
         .container {
-            width: 1200px;
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            display: grid;
-            grid-template-columns: 600px 1fr;
-            gap: 24px;
-            align-items: start;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
         }
         
         .left-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            max-width: 800px;
+            margin: 0 auto;
         }
         
         .upload-area {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 32px;
+            border: 2px dashed var(--text-secondary);
+            border-radius: 10px;
+            padding: 40px;
             text-align: center;
-            border: 1px solid var(--border);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
         
-        .upload-area::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.1) 50%,
-                transparent 100%);
-        }
-        
-        .upload-area:hover, .upload-area.dragover {
+        .upload-area.dragover {
             border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            background-color: rgba(76, 175, 80, 0.1);
         }
         
         .file-list {
             margin-top: 20px;
             text-align: left;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        
-        .file-list::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .file-list::-webkit-scrollbar-track {
-            background: var(--card-bg);
-            border-radius: 4px;
-        }
-        
-        .file-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-        
-        .file-list::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
         }
         
         .file-item {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin: 4px 0;
+            background-color: var(--surface);
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.2s;
-        }
-        
-        .file-item:hover {
-            background: rgba(255, 255, 255, 0.05);
         }
         
         .button-group {
             display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin: 24px 0;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
         }
         
         .button {
-            background: var(--primary);
-            color: var(--text);
+            background-color: var(--primary);
+            color: white;
             border: none;
-            padding: 0 32px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s;
-            height: 48px;
-            position: relative;
-            overflow: hidden;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
         }
         
-        .button:hover:not(:disabled) {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 8px 24px rgba(94, 106, 210, 0.3);
-        }
-        
-        .button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.2) 50%,
-                transparent 100%);
+        .button:hover {
+            background-color: var(--primary-dark);
         }
         
         .button:disabled {
-            opacity: 0.5;
+            background-color: rgba(76, 175, 80, 0.5);
             cursor: not-allowed;
         }
         
         .options-panel {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 32px;
-            border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
+            background-color: var(--surface);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
         
-        .options-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                rgba(255, 255, 255, 0.1) 50%,
-                transparent 100%);
+        .options-title {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--text-primary);
         }
         
-        .option-section {
-            position: relative;
-            padding: 24px;
-            margin: -24px;
-            margin-bottom: 32px;
-        }
-        
-        .option-section:last-child {
-            margin-bottom: -24px;
-        }
-        
-        .option-section + .option-section {
-            border-top: 1px solid var(--border);
-        }
-        
-        .option-section h3 {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin: 0 0 20px 0;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        
-        .option-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+        .options-group {
+            margin-bottom: 20px;
         }
         
         .option-item {
             display: flex;
             align-items: center;
-            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        
+        .option-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        
+        .custom-chars {
+            margin-top: 15px;
+        }
+        
+        .custom-chars textarea {
+            width: 100%;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
             padding: 10px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .option-item:hover {
-            background: rgba(255, 255, 255, 0.03);
-        }
-        
-        input[type="checkbox"] {
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: rgba(255, 255, 255, 0.03);
-        }
-        
-        input[type="checkbox"]:checked {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        input[type="checkbox"]:checked::after {
-            content: "✓";
-            color: white;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 12px;
-        }
-        
-        .option-text {
-            margin-left: 12px;
-            color: var(--text);
-            font-size: 14px;
-        }
-        
-        .progress {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--card-bg);
-            padding: 40px 80px;
-            border-radius: 20px;
-            font-size: 48px;
-            font-weight: 600;
-            display: none;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        
-        .file-result {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 12px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-        
-        .file-name {
-            color: var(--text);
-            font-weight: 500;
-            font-size: 15px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-        }
-        
-        .file-stats {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .stat-label {
-            color: var(--text-secondary);
-        }
-        
-        .stat-value {
-            color: var(--text);
-        }
-        
-        .reduction {
-            color: var(--success);
-            font-weight: 500;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .custom-chars-input {
-            margin-top: 12px;
-            width: 100%;
-        }
-        
-        .custom-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--text);
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .custom-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
-        }
-        
-        .custom-input::placeholder {
-            color: var(--text-secondary);
-        }
-        
-        .option-group {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            padding-left: 32px;
-            padding-right: 32px;
-            border: 1px solid var(--border);
-        }
-        
-        .option-group + .option-group {
-            margin-top: 16px;
-        }
-        
-        .option-group h3 {
-            font-size: 16px;
-            font-weight: 500;
-            margin: 0 0 16px 0;
-            color: var(--text-secondary);
-        }
-        
-        .custom-chars-input {
-            margin-top: 12px;
-            width: 100%;
-        }
-        
-        .custom-input {
-            width: 95%;
-            padding: 12px;
-            padding-left: 16px;
-            padding-right: 16px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--card-bg);
-            color: var(--text);
-            font-size: 16px;
-            transition: all 0.2s;
+            color: var(--text-primary);
+            font-family: 'Roboto', sans-serif;
+            resize: vertical;
         }
         
         .result-panel {
@@ -457,61 +158,93 @@
         }
         
         .result-item {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            background-color: var(--surface);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: opacity 0.5s ease;
         }
         
         .result-item.error {
-            border-color: #ff4444;
+            background-color: rgba(207, 102, 121, 0.2);
+            border-left: 4px solid var(--error);
         }
         
-        .result-item .filename {
-            font-weight: 500;
+        .result-item.info {
+            background-color: rgba(33, 150, 243, 0.2);
+            border-left: 4px solid #2196F3;
         }
         
-        .result-item .status {
-            padding: 4px 12px;
-            border-radius: 20px;
+        .file-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-info {
+            flex-grow: 1;
+        }
+        
+        .file-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .file-stats {
+            display: flex;
+            gap: 15px;
+            color: var(--text-secondary);
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+        }
+        
+        .stat-label {
+            margin-right: 5px;
+        }
+        
+        .reduction {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 进度条样式 */
+        .progress-container {
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: var(--text-secondary);
             font-size: 14px;
-        }
-        
-        .result-item .status.success {
-            background: rgba(76, 175, 80, 0.1);
-            color: #4CAF50;
-        }
-        
-        .result-item .status.error {
-            background: rgba(255, 68, 68, 0.1);
-            color: #ff4444;
-        }
-        
-        .result-item .error-message {
-            color: #ff4444;
-            margin-left: 12px;
-        }
-        
-        .result-item .download-btn {
-            background: var(--primary);
-            color: white;
-            text-decoration: none;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        
-        .result-item .download-btn:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-        
-        .option-group {
         }
     </style>
 </head>
@@ -548,6 +281,13 @@
             
             <div class="button-group">
                 <button class="button" id="process-btn" disabled>开始处理</button>
+            </div>
+            
+            <div class="progress-container" style="display: none;" id="progressBar">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
             </div>
             
             <div class="result-panel"></div>
@@ -641,21 +381,29 @@
         const fileInput = document.getElementById('file-input');
         const fileList = document.getElementById('file-list');
         const processBtn = document.getElementById('process-btn');
-        const progress = document.getElementById('progress');
-        const result = document.getElementById('result');
-        const sizeInfo = document.getElementById('size-info');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const progressText = document.getElementById('progressText');
         
         // 添加错误处理函数
-        function showError(message) {
+        function showMessage(message, type = 'info') {
             const resultPanel = document.querySelector('.result-panel');
-            const resultDiv = document.createElement('div');
-            resultDiv.className = 'result-item error';
-            resultDiv.innerHTML = `
-                <span class="filename">错误</span>
-                <span class="status error">处理失败</span>
-                <span class="error-message">${message}</span>
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `result-item ${type} fade-in`;
+            messageDiv.innerHTML = `
+                <span class="message">${message}</span>
             `;
-            resultPanel.appendChild(resultDiv);
+            resultPanel.appendChild(messageDiv);
+            
+            // 5秒后自动移除消息
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (resultPanel.contains(messageDiv)) {
+                        resultPanel.removeChild(messageDiv);
+                    }
+                }, 500);
+            }, 5000);
         }
         
         function updateFileList() {
@@ -688,7 +436,7 @@
                 if (file.name.match(/\.(ttf|otf|woff|woff2|eot)$/i)) {
                     // 检查文件大小是否超过100MB
                     if (file.size > 100 * 1024 * 1024) {
-                        showError(`文件 ${file.name} 超过100MB限制`);
+                        showMessage(`文件 ${file.name} 超过100MB限制`, 'error');
                         return;
                     }
                     currentFiles.add(file);
@@ -736,11 +484,8 @@
         // 处理文件处理
         processBtn.addEventListener('click', async () => {
             try {
-                progress.style.display = 'block';
                 processBtn.disabled = true;
                 document.querySelector('.result-panel').innerHTML = ''; // 清空之前的结果
-                
-                let processed = 0;
                 
                 // 收集所有选项
                 const options = {};
@@ -759,16 +504,22 @@
                 console.log('选项状态:', options);
                 
                 for (const file of currentFiles) {
-                    const formData = new FormData();
-                    formData.append('font', file);
-                    formData.append('options', JSON.stringify(options));
-                    
-                    progress.textContent = `${Math.round((processed / currentFiles.size) * 100)}%`;
-                    
                     try {
+                        // 显示进度条
+                        const progressBar = document.getElementById('progressBar');
+                        const progressText = document.getElementById('progressText');
+                        progressBar.style.display = 'block';
+                        progressBar.value = 0;
+                        progressText.textContent = '准备处理...';
+                        
+                        const formData = new FormData();
+                        formData.append('font', file);
+                        formData.append('options', JSON.stringify(options));
+                        
                         console.log('开始处理文件:', file.name);
                         console.log('文件大小:', file.size);
                         
+                        // 发送处理请求
                         const response = await fetch('/process', {
                             method: 'POST',
                             body: formData
@@ -782,133 +533,27 @@
                         const data = await response.json();
                         console.log('处理结果:', data);
                         
-                        // 显示处理结果
-                        const resultDiv = document.createElement('div');
-                        resultDiv.className = 'result-item';
-                        resultDiv.innerHTML = `
-                            <div class="file-result fade-in">
-                                <div class="file-info">
-                                    <div class="file-name">${file.name}</div>
-                                    <div class="file-stats">
-                                        <div class="stat-item">
-                                            <span class="stat-label">原始:</span>
-                                            <span class="stat-value">${data.original_size}</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">优化后:</span>
-                                            <span class="stat-value">${data.new_size}</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="reduction">-${data.reduction}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        document.querySelector('.result-panel').appendChild(resultDiv);
-                        
-                        // 自动触发下载
-                        if (data.download_url) {
-                            const link = document.createElement('a');
-                            link.href = data.download_url;
-                            link.download = file.name;  // 使用原始文件名
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        }
+                        // 开始轮询状态
+                        await pollStatus(data.task_id, file.name);
                         
                     } catch (error) {
                         console.error('处理文件时出错:', error);
-                        const resultDiv = document.createElement('div');
-                        resultDiv.className = 'result-item error';
-                        resultDiv.innerHTML = `
-                            <span class="filename">${file.name}</span>
-                            <span class="status error">处理失败</span>
-                            <span class="error-message">${error.message}</span>
-                        `;
-                        document.querySelector('.result-panel').appendChild(resultDiv);
+                        showMessage(error.message || '处理失败，请稍后重试', 'error');
+                        const progressBar = document.getElementById('progressBar');
+                        if (progressBar) progressBar.style.display = 'none';
                     }
-                    
-                    processed++;
                 }
                 
             } catch (error) {
                 console.error('整体处理过程出错:', error);
-                showError('处理过程中出错：' + error.message);
+                showMessage('处理过程中出错：' + (error.message || '未知错误'), 'error');
             } finally {
-                progress.style.display = 'none';
                 processBtn.disabled = false;
             }
         });
 
-        async function processFont() {
-            const fileInput = document.getElementById('fontFile');
-            const file = fileInput.files[0];
-            if (!file) {
-                showMessage('请选择字体文件', 'error');
-                return;
-            }
-
-            // 检查文件大小
-            if (file.size > 100 * 1024 * 1024) {
-                showMessage('文件大小超过100MB限制', 'error');
-                return;
-            }
-
-            // 收集选项
-            const options = {};
-            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                options[checkbox.name] = checkbox.checked;
-            });
-
-            // 添加自定义字符
-            const customChars = document.getElementById('customChars').value;
-            if (customChars) {
-                options.customChars = customChars;
-            }
-
-            // 准备表单数据
-            const formData = new FormData();
-            formData.append('font', file);
-            formData.append('options', JSON.stringify(options));
-
-            try {
-                // 显示进度条
-                const progressBar = document.getElementById('progressBar');
-                const progressText = document.getElementById('progressText');
-                progressBar.style.display = 'block';
-                progressBar.value = 0;
-                progressText.textContent = '准备处理...';
-                
-                // 发送处理请求
-                const response = await fetch('/process', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || '处理失败');
-                }
-                
-                const data = await response.json();
-                const taskId = data.task_id;
-                
-                // 开始轮询状态
-                await pollStatus(taskId);
-                
-            } catch (error) {
-                console.error('处理出错:', error);
-                showMessage(error.message || '处理失败，请稍后重试', 'error');
-                const progressBar = document.getElementById('progressBar');
-                progressBar.style.display = 'none';
-            }
-        }
-
-        async function pollStatus(taskId) {
-            const progressBar = document.getElementById('progressBar');
-            const progressText = document.getElementById('progressText');
-            const resultPanel = document.querySelector('.result-panel');
+        async function pollStatus(taskId, filename) {
+            progressBar.style.display = 'block';
             
             let retryCount = 0;
             const maxRetries = 3;
@@ -928,20 +573,19 @@
                     
                     retryCount = 0; // 重置重试计数
                     const status = await response.json();
+                    console.log('状态更新:', status);
                     
                     // 更新进度
-                    progressBar.value = status.progress;
+                    const progress = status.progress || 0;
+                    progressBarFill.style.width = `${progress}%`;
                     progressText.textContent = status.message || '处理中...';
                     
-                    if (status.status === 'completed') {
+                    if (status.status === 'completed' && status.result) {
                         // 处理完成，显示下载链接
-                        progressBar.value = 100;
+                        progressBarFill.style.width = '100%';
                         progressText.textContent = '处理完成！';
                         
                         const result = status.result;
-                        if (!result) {
-                            throw new Error('处理结果为空');
-                        }
                         
                         // 显示结果
                         const resultDiv = document.createElement('div');
@@ -949,7 +593,7 @@
                         resultDiv.innerHTML = `
                             <div class="file-result">
                                 <div class="file-info">
-                                    <div class="file-name">${result.filename || '未知文件'}</div>
+                                    <div class="file-name">${filename || result.filename || '未知文件'}</div>
                                     <div class="file-stats">
                                         <div class="stat-item">
                                             <span class="stat-label">原始:</span>
@@ -965,22 +609,23 @@
                                     </div>
                                 </div>
                             </div>
-                            <a href="${result.download_url}" class="button" download="${result.filename}" style="margin-top: 10px;">下载文件</a>
+                            <a href="${result.download_url}" class="button" download="${filename || result.filename}" style="margin-top: 10px;">下载文件</a>
                         `;
-                        resultPanel.appendChild(resultDiv);
+                        document.querySelector('.result-panel').appendChild(resultDiv);
                         
                         // 隐藏进度条
                         progressBar.style.display = 'none';
-                        progressText.textContent = '';
                         
                         // 自动触发下载
                         if (result.download_url) {
                             const link = document.createElement('a');
                             link.href = result.download_url;
-                            link.download = result.filename;
+                            link.download = filename || result.filename;
                             document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
+                            setTimeout(() => {
+                                link.click();
+                                document.body.removeChild(link);
+                            }, 100);
                         }
                         
                         break;
@@ -996,30 +641,9 @@
                     console.error('轮询状态出错:', error);
                     showMessage(error.message || '处理失败，请稍后重试', 'error');
                     progressBar.style.display = 'none';
-                    progressText.textContent = '';
                     break;
                 }
             }
-        }
-
-        function showMessage(message, type = 'info') {
-            const resultPanel = document.querySelector('.result-panel');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `result-item ${type} fade-in`;
-            messageDiv.innerHTML = `
-                <span class="message">${message}</span>
-            `;
-            resultPanel.appendChild(messageDiv);
-            
-            // 5秒后自动移除消息
-            setTimeout(() => {
-                messageDiv.style.opacity = '0';
-                setTimeout(() => {
-                    if (resultPanel.contains(messageDiv)) {
-                        resultPanel.removeChild(messageDiv);
-                    }
-                }, 500);
-            }, 5000);
         }
     </script>
 </body>
