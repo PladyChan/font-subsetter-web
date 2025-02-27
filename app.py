@@ -8,8 +8,6 @@ import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS  # 添加这行
-import threading
-from filelock import FileLock
 import uuid
 
 logging.basicConfig(level=logging.DEBUG)
@@ -31,10 +29,6 @@ limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"]
 )
-
-# 添加全局锁字典
-processing_locks = {}
-processing_status = {}
 
 # 添加安全头
 @app.after_request
@@ -92,9 +86,6 @@ def process_font():
         return jsonify({'error': '不支持的字体格式'}), 400
     
     try:
-        # 生成唯一的任务ID
-        task_id = str(uuid.uuid4())
-        
         # 保存原始文件名和大小
         original_filename = font_file.filename
         original_size = len(font_file.read())
@@ -110,34 +101,53 @@ def process_font():
         options = json.loads(request.form.get('options', '{}'))
         logging.debug(f"接收到的选项: {options}")
         
-        # 创建任务状态
-        processing_status[task_id] = {
-            'status': 'preparing',
-            'progress': 0,
-            'message': '准备处理文件...'
-        }
-        
         # 使用临时文件保存上传的字体
-        input_path = os.path.join(get_temp_dir(), f"{task_id}_input{os.path.splitext(original_filename)[1]}")
-        with open(input_path, 'wb') as f:
-            font_file.save(f)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(original_filename)[1]) as input_temp:
+            font_file.save(input_temp.name)
+            input_path = input_temp.name
             
-        # 创建文件锁
-        lock_path = input_path + '.lock'
-        processing_locks[task_id] = FileLock(lock_path)
-        
-        # 启动后台处理线程
-        thread = threading.Thread(
-            target=process_font_task,
-            args=(task_id, input_path, options, original_filename)
-        )
-        thread.start()
-        
-        return jsonify({
-            'task_id': task_id,
-            'status': 'processing',
-            'status_url': f'/status/{task_id}'
-        })
+        try:
+            # 使用 TypeTrim 处理字体
+            logging.debug(f"开始处理字体文件: {input_path}")
+            result = process_font_file(input_path, options)
+            
+            # 检查处理后的文件大小
+            if os.path.getsize(result['output_path']) < 1024:  # 小于1KB
+                raise Exception("处理后的文件大小异常，可能处理失败")
+            
+            logging.debug(f"字体处理结果: {result}")
+            
+            # 清理输入临时文件
+            os.unlink(input_path)
+            
+            # 添加下载链接到结果
+            result['download_url'] = f"/download/{os.path.basename(result['output_path'])}?original_name={original_filename}"
+            result['filename'] = original_filename
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            error_msg = str(e)
+            error_type = type(e).__name__
+            import traceback
+            stack_trace = traceback.format_exc()
+            logging.error(f"字体处理错误: {error_msg}")
+            logging.error(f"错误类型: {error_type}")
+            logging.error(f"错误堆栈: {stack_trace}")
+            
+            # 清理临时文件
+            try:
+                os.unlink(input_path)
+                if 'result' in locals() and 'output_path' in result:
+                    os.unlink(result['output_path'])
+            except:
+                pass
+                
+            return jsonify({
+                'error': f"处理失败: {error_msg}",
+                'error_type': error_type,
+                'stack_trace': stack_trace
+            }), 500
         
     except Exception as e:
         error_msg = str(e)
@@ -152,8 +162,6 @@ def process_font():
         if 'input_path' in locals():
             try:
                 os.unlink(input_path)
-                if os.path.exists(lock_path):
-                    os.unlink(lock_path)
             except:
                 pass
                 
@@ -162,60 +170,6 @@ def process_font():
             'error_type': error_type,
             'stack_trace': stack_trace
         }), 500
-
-def process_font_task(task_id, input_path, options, original_filename):
-    lock = processing_locks[task_id]
-    try:
-        with lock:
-            processing_status[task_id]['status'] = 'processing'
-            processing_status[task_id]['progress'] = 30
-            processing_status[task_id]['message'] = '正在处理字体...'
-            
-            # 使用 TypeTrim 处理字体
-            logging.debug(f"开始处理字体文件: {input_path}")
-            result = process_font_file(input_path, options)
-            
-            # 检查处理后的文件大小
-            if os.path.getsize(result['output_path']) < 1024:  # 小于1KB
-                raise Exception("处理后的文件大小异常，可能处理失败")
-            
-            processing_status[task_id]['status'] = 'completed'
-            processing_status[task_id]['progress'] = 100
-            processing_status[task_id]['message'] = '处理完成'
-            processing_status[task_id]['result'] = {
-                'download_url': f"/download/{os.path.basename(result['output_path'])}?original_name={original_filename}",
-                'filename': original_filename,
-                **result
-            }
-            
-    except Exception as e:
-        processing_status[task_id]['status'] = 'error'
-        processing_status[task_id]['message'] = f"处理失败: {str(e)}"
-        logging.error(f"Task {task_id} failed: {str(e)}")
-        
-    finally:
-        # 清理资源
-        try:
-            os.unlink(input_path)
-            os.unlink(lock_path)
-            del processing_locks[task_id]
-        except:
-            pass
-
-@app.route('/status/<task_id>', methods=['GET'])
-def get_task_status(task_id):
-    if task_id not in processing_status:
-        return jsonify({'error': '任务不存在'}), 404
-        
-    status = processing_status[task_id]
-    
-    # 如果任务完成或出错，从状态字典中删除
-    if status['status'] in ['completed', 'error']:
-        status_copy = status.copy()
-        del processing_status[task_id]
-        return jsonify(status_copy)
-        
-    return jsonify(status)
 
 @app.route('/download/<path:filename>', methods=['GET'])
 def download(filename):

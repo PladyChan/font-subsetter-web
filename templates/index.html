@@ -513,6 +513,19 @@
         
         .option-group {
         }
+        
+        #progressBar {
+            display: none;
+        }
+        
+        #progressText {
+            display: none;
+        }
+        
+        #downloadArea {
+            margin: 20px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -632,7 +645,7 @@
         </div>
     </div>
     
-    <div class="progress" id="progress">0%</div>
+    <div class="progress" id="progress">处理中...</div>
     
     <script>
         let currentFiles = new Set();
