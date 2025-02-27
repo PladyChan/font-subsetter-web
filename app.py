@@ -11,6 +11,7 @@ from flask_cors import CORS  # 添加这行
 import threading
 from filelock import FileLock
 import uuid
+import shutil
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -47,11 +48,18 @@ def add_security_headers(response):
 
 # 使用临时目录
 def get_temp_dir():
+    # 在 Vercel 环境中使用 /tmp 目录
+    if os.environ.get('VERCEL'):
+        tmp_dir = '/tmp'
+        if not os.path.exists(tmp_dir):
+            os.makedirs(tmp_dir, exist_ok=True)
+        return tmp_dir
     return tempfile.gettempdir()
 
 # 添加错误处理
 @app.errorhandler(500)
 def handle_500_error(error):
+    logging.error(f"500 错误: {str(error)}")
     return jsonify({
         "error": "Internal Server Error",
         "message": str(error)
@@ -96,9 +104,9 @@ def process_font():
         task_id = str(uuid.uuid4())
         
         # 保存原始文件名和大小
-        original_filename = font_file.filename
-        original_size = len(font_file.read())
-        font_file.seek(0)  # 重置文件指针
+        original_filename = secure_filename(font_file.filename)
+        font_data = font_file.read()
+        original_size = len(font_data)
         
         # 检查文件大小
         if original_size < 1024:  # 小于1KB
@@ -117,13 +125,17 @@ def process_font():
             'message': '准备处理文件...'
         }
         
+        # 确保临时目录存在
+        temp_dir = get_temp_dir()
+        os.makedirs(temp_dir, exist_ok=True)
+        
         # 使用临时文件保存上传的字体
-        input_path = os.path.join(get_temp_dir(), f"{task_id}_input{os.path.splitext(original_filename)[1]}")
+        input_path = os.path.join(temp_dir, f"{task_id}_input{os.path.splitext(original_filename)[1]}")
         with open(input_path, 'wb') as f:
-            font_file.save(f)
+            f.write(font_data)
             
         # 创建文件锁
-        lock_path = input_path + '.lock'
+        lock_path = os.path.join(temp_dir, f"{task_id}.lock")
         processing_locks[task_id] = FileLock(lock_path)
         
         # 启动后台处理线程
@@ -131,6 +143,7 @@ def process_font():
             target=process_font_task,
             args=(task_id, input_path, options, original_filename)
         )
+        thread.daemon = True  # 设置为守护线程，确保主进程退出时线程也会退出
         thread.start()
         
         return jsonify({
@@ -151,56 +164,93 @@ def process_font():
         # 确保清理临时文件
         if 'input_path' in locals():
             try:
-                os.unlink(input_path)
-                if os.path.exists(lock_path):
+                if os.path.exists(input_path):
+                    os.unlink(input_path)
+                if 'lock_path' in locals() and os.path.exists(lock_path):
                     os.unlink(lock_path)
-            except:
-                pass
+            except Exception as cleanup_error:
+                logging.error(f"清理临时文件时出错: {str(cleanup_error)}")
                 
         return jsonify({
             'error': f"处理失败: {error_msg}",
-            'error_type': error_type,
-            'stack_trace': stack_trace
+            'error_type': error_type
         }), 500
 
 def process_font_task(task_id, input_path, options, original_filename):
-    lock = processing_locks[task_id]
+    lock = processing_locks.get(task_id)
+    if not lock:
+        logging.error(f"任务 {task_id} 的锁不存在")
+        return
+        
     try:
         with lock:
             processing_status[task_id]['status'] = 'processing'
             processing_status[task_id]['progress'] = 30
             processing_status[task_id]['message'] = '正在处理字体...'
             
+            # 检查输入文件是否存在
+            if not os.path.exists(input_path):
+                raise FileNotFoundError(f"输入文件不存在: {input_path}")
+                
             # 使用 TypeTrim 处理字体
             logging.debug(f"开始处理字体文件: {input_path}")
             result = process_font_file(input_path, options)
             
+            # 检查处理后的文件是否存在
+            if not os.path.exists(result['output_path']):
+                raise FileNotFoundError(f"输出文件不存在: {result['output_path']}")
+                
             # 检查处理后的文件大小
-            if os.path.getsize(result['output_path']) < 1024:  # 小于1KB
-                raise Exception("处理后的文件大小异常，可能处理失败")
+            output_size = os.path.getsize(result['output_path'])
+            if output_size < 1024:  # 小于1KB
+                raise Exception(f"处理后的文件大小异常 ({output_size} 字节)，可能处理失败")
+            
+            # 复制输出文件到一个更稳定的位置
+            output_filename = f"{task_id}_output{os.path.splitext(original_filename)[1]}"
+            stable_output_path = os.path.join(get_temp_dir(), output_filename)
+            shutil.copy2(result['output_path'], stable_output_path)
+            
+            # 更新结果中的输出路径
+            result['output_path'] = stable_output_path
             
             processing_status[task_id]['status'] = 'completed'
             processing_status[task_id]['progress'] = 100
             processing_status[task_id]['message'] = '处理完成'
             processing_status[task_id]['result'] = {
-                'download_url': f"/download/{os.path.basename(result['output_path'])}?original_name={original_filename}",
+                'download_url': f"/download/{output_filename}?original_name={original_filename}",
                 'filename': original_filename,
-                **result
+                'original_size': result['original_size'],
+                'new_size': result['new_size'],
+                'reduction': result['reduction']
             }
             
     except Exception as e:
-        processing_status[task_id]['status'] = 'error'
-        processing_status[task_id]['message'] = f"处理失败: {str(e)}"
-        logging.error(f"Task {task_id} failed: {str(e)}")
+        error_msg = str(e)
+        logging.error(f"Task {task_id} failed: {error_msg}")
+        import traceback
+        logging.error(traceback.format_exc())
+        
+        if task_id in processing_status:
+            processing_status[task_id]['status'] = 'error'
+            processing_status[task_id]['message'] = f"处理失败: {error_msg}"
         
     finally:
         # 清理资源
         try:
-            os.unlink(input_path)
-            os.unlink(lock_path)
-            del processing_locks[task_id]
-        except:
-            pass
+            if os.path.exists(input_path):
+                os.unlink(input_path)
+            
+            # 清理锁文件
+            lock_path = os.path.join(get_temp_dir(), f"{task_id}.lock")
+            if os.path.exists(lock_path):
+                os.unlink(lock_path)
+                
+            # 从字典中移除锁
+            if task_id in processing_locks:
+                del processing_locks[task_id]
+                
+        except Exception as cleanup_error:
+            logging.error(f"清理资源时出错: {str(cleanup_error)}")
 
 @app.route('/status/<task_id>', methods=['GET'])
 def get_task_status(task_id):
@@ -212,7 +262,13 @@ def get_task_status(task_id):
     # 如果任务完成或出错，从状态字典中删除
     if status['status'] in ['completed', 'error']:
         status_copy = status.copy()
-        del processing_status[task_id]
+        # 延迟删除，确保客户端有足够时间获取结果
+        if 'delete_after' not in status:
+            status['delete_after'] = 5  # 5次请求后删除
+        else:
+            status['delete_after'] -= 1
+            if status['delete_after'] <= 0:
+                del processing_status[task_id]
         return jsonify(status_copy)
         
     return jsonify(status)
@@ -228,6 +284,11 @@ def download(filename):
         if not os.path.exists(temp_path):
             return jsonify({'error': '文件不存在或已过期'}), 404
         
+        # 检查文件大小
+        file_size = os.path.getsize(temp_path)
+        if file_size < 1024:  # 小于1KB
+            return jsonify({'error': f'文件大小异常 ({file_size} 字节)，可能已损坏'}), 400
+        
         response = send_file(
             temp_path,
             as_attachment=True,
@@ -239,13 +300,17 @@ def download(filename):
         @response.call_on_close
         def cleanup():
             try:
-                os.unlink(temp_path)
-            except:
-                pass
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+            except Exception as e:
+                logging.error(f"删除临时文件时出错: {str(e)}")
                 
         return response
         
     except Exception as e:
+        logging.error(f"下载文件时出错: {str(e)}")
+        import traceback
+        logging.error(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 @app.route('/favicon.ico')

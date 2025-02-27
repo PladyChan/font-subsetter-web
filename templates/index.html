@@ -840,6 +840,187 @@
                 processBtn.disabled = false;
             }
         });
+
+        async function processFont() {
+            const fileInput = document.getElementById('fontFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                showMessage('请选择字体文件', 'error');
+                return;
+            }
+
+            // 检查文件大小
+            if (file.size > 100 * 1024 * 1024) {
+                showMessage('文件大小超过100MB限制', 'error');
+                return;
+            }
+
+            // 收集选项
+            const options = {};
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                options[checkbox.name] = checkbox.checked;
+            });
+
+            // 添加自定义字符
+            const customChars = document.getElementById('customChars').value;
+            if (customChars) {
+                options.customChars = customChars;
+            }
+
+            // 准备表单数据
+            const formData = new FormData();
+            formData.append('font', file);
+            formData.append('options', JSON.stringify(options));
+
+            try {
+                // 显示进度条
+                const progressBar = document.getElementById('progressBar');
+                const progressText = document.getElementById('progressText');
+                progressBar.style.display = 'block';
+                progressBar.value = 0;
+                progressText.textContent = '准备处理...';
+                
+                // 发送处理请求
+                const response = await fetch('/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || '处理失败');
+                }
+                
+                const data = await response.json();
+                const taskId = data.task_id;
+                
+                // 开始轮询状态
+                await pollStatus(taskId);
+                
+            } catch (error) {
+                console.error('处理出错:', error);
+                showMessage(error.message || '处理失败，请稍后重试', 'error');
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.display = 'none';
+            }
+        }
+
+        async function pollStatus(taskId) {
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const resultPanel = document.querySelector('.result-panel');
+            
+            let retryCount = 0;
+            const maxRetries = 3;
+            
+            while (true) {
+                try {
+                    const response = await fetch(`/status/${taskId}`);
+                    if (!response.ok) {
+                        retryCount++;
+                        if (retryCount > maxRetries) {
+                            throw new Error('状态查询失败，请刷新页面重试');
+                        }
+                        // 等待后重试
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        continue;
+                    }
+                    
+                    retryCount = 0; // 重置重试计数
+                    const status = await response.json();
+                    
+                    // 更新进度
+                    progressBar.value = status.progress;
+                    progressText.textContent = status.message || '处理中...';
+                    
+                    if (status.status === 'completed') {
+                        // 处理完成，显示下载链接
+                        progressBar.value = 100;
+                        progressText.textContent = '处理完成！';
+                        
+                        const result = status.result;
+                        if (!result) {
+                            throw new Error('处理结果为空');
+                        }
+                        
+                        // 显示结果
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item fade-in';
+                        resultDiv.innerHTML = `
+                            <div class="file-result">
+                                <div class="file-info">
+                                    <div class="file-name">${result.filename || '未知文件'}</div>
+                                    <div class="file-stats">
+                                        <div class="stat-item">
+                                            <span class="stat-label">原始:</span>
+                                            <span class="stat-value">${result.original_size || '未知'}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">优化后:</span>
+                                            <span class="stat-value">${result.new_size || '未知'}</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="reduction">-${result.reduction || '0%'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="${result.download_url}" class="button" download="${result.filename}" style="margin-top: 10px;">下载文件</a>
+                        `;
+                        resultPanel.appendChild(resultDiv);
+                        
+                        // 隐藏进度条
+                        progressBar.style.display = 'none';
+                        progressText.textContent = '';
+                        
+                        // 自动触发下载
+                        if (result.download_url) {
+                            const link = document.createElement('a');
+                            link.href = result.download_url;
+                            link.download = result.filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                        
+                        break;
+                    } else if (status.status === 'error') {
+                        // 处理出错
+                        throw new Error(status.message || '处理失败');
+                    }
+                    
+                    // 等待一段时间后继续轮询
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                } catch (error) {
+                    console.error('轮询状态出错:', error);
+                    showMessage(error.message || '处理失败，请稍后重试', 'error');
+                    progressBar.style.display = 'none';
+                    progressText.textContent = '';
+                    break;
+                }
+            }
+        }
+
+        function showMessage(message, type = 'info') {
+            const resultPanel = document.querySelector('.result-panel');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `result-item ${type} fade-in`;
+            messageDiv.innerHTML = `
+                <span class="message">${message}</span>
+            `;
+            resultPanel.appendChild(messageDiv);
+            
+            // 5秒后自动移除消息
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+                setTimeout(() => {
+                    if (resultPanel.contains(messageDiv)) {
+                        resultPanel.removeChild(messageDiv);
+                    }
+                }, 500);
+            }, 5000);
+        }
     </script>
 </body>
 </html> 
