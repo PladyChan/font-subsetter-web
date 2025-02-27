@@ -1,11 +1,11 @@
-# TypeTrim 阿里云部署指南
+# TypeTrim 阿里云部署指南 (适用于 Alibaba Cloud Linux)
 
 本文档提供了将 TypeTrim 应用部署到阿里云 ECS 的详细步骤。
 
 ## 前提条件
 
-1. 一台运行 Ubuntu 20.04 或更高版本的阿里云 ECS 实例
-2. 一个已解析到该 ECS 实例的域名
+1. 一台运行 Alibaba Cloud Linux 的阿里云 ECS 实例
+2. 一个已解析到该 ECS 实例的域名（可选）
 3. 具有 root 或 sudo 权限的用户账号
 
 ## 部署步骤
@@ -21,8 +21,8 @@ ssh root@您的ECS实例IP
 ### 2. 安装 Git 并克隆代码库
 
 ```bash
-apt-get update
-apt-get install -y git
+yum update -y
+yum install -y git
 git clone https://github.com/PladyChan/font-subsetter-web.git
 cd font-subsetter-web
 ```
@@ -35,12 +35,13 @@ cd font-subsetter-web
 nano aliyun-deploy/deploy.sh
 ```
 
-将 `DOMAIN="typetrim.com"` 修改为您自己的域名。
+将 `DOMAIN="typetrim.com"` 修改为您自己的域名或服务器IP地址。
 
 ### 4. 运行部署脚本
 
 ```bash
 cd aliyun-deploy
+chmod +x deploy.sh
 ./deploy.sh
 ```
 
@@ -52,8 +53,9 @@ cd aliyun-deploy
 - 创建虚拟环境并安装依赖
 - 配置 Nginx
 - 配置 Supervisor
-- 重启服务
-- 配置 SSL 证书
+- 启动服务
+- 配置防火墙
+- 配置 SSL 证书（如果使用域名）
 
 ### 5. 验证部署
 
@@ -70,7 +72,7 @@ supervisorctl status typetrim
 tail -f /var/log/supervisor/typetrim.out.log
 ```
 
-然后，在浏览器中访问您的域名 `https://您的域名` 来验证应用是否正常工作。
+然后，在浏览器中访问您的域名或服务器IP来验证应用是否正常工作。
 
 ## 故障排除
 
@@ -79,6 +81,12 @@ tail -f /var/log/supervisor/typetrim.out.log
 - Nginx 错误日志: `/var/log/nginx/error.log`
 - Supervisor 日志: `/var/log/supervisor/typetrim.err.log`
 - 应用日志: `/var/log/supervisor/typetrim.out.log`
+
+### 常见问题
+
+1. **端口未开放**：确保在阿里云安全组中开放了80和443端口
+2. **服务未启动**：使用 `systemctl status nginx` 和 `systemctl status supervisord` 检查服务状态
+3. **权限问题**：确保应用目录权限正确 `chown -R nginx:nginx /var/www/typetrim`
 
 ## 更新应用
 
