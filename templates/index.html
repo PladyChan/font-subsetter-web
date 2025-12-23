@@ -869,12 +869,30 @@
                             body: formData
                         });
                         
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.error || `处理失败 (${response.status})`);
+                        // 统一读取文本，兼容非 JSON 错误响应（如 403 Forbidden）
+                        const rawText = await response.text();
+                        let parsed;
+                        try {
+                            parsed = rawText ? JSON.parse(rawText) : null;
+                        } catch (_) {
+                            parsed = null;
                         }
                         
-                        const data = await response.json();
+                        if (!response.ok) {
+                            const isForbidden = response.status === 403 || (rawText && rawText.includes('Forbidden'));
+                            const baseMsg = (parsed && (parsed.error || parsed.message)) 
+                                || rawText 
+                                || `处理失败 (${response.status})`;
+                            const message = isForbidden
+                                ? `${baseMsg}。可能是文件超过 Vercel 上传限制（约 4.5-5MB），请压缩或换更小的文件，或改用外部存储/自建后端。`
+                                : baseMsg;
+                            throw new Error(message);
+                        }
+                        
+                        if (!parsed || typeof parsed !== 'object') {
+                            throw new Error('服务返回格式异常');
+                        }
+                        const data = parsed;
                         console.log('处理结果:', data);
                         
                         // 显示处理结果
