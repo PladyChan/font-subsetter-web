@@ -34,24 +34,9 @@ def get_chars_by_options(options):
     if options.get('cn_punctuation', False):
         # 中文标点
         chars.update('，。！？；：""''「」『』（）【】《》〈〉…—～·、')
-    if options.get('chinese_common', False):
-        # 常用汉字集（3500字）
-        common_chars = (
-            '的一是了我不人在他有这个上们来到时大地为子中你说生国年着就那和要她出也得里后自以会家可下而过天去能对小多然于心学'
-            '么之都好看起发当没成只如事把还用第样道想作种开美总从无情己面最女但现前些所同日手又行意动方期它头经长儿回位分爱老'
-            '因很给名法间斯知世什两次使身者被高已亲其进此话常与活正感见明问力理尔点文几定本公特做外孩相西果走将月十实向声车全'
-            '信重三机工物气每并别真打太新比才便夫再书部水像眼等体却加电主界门利海受听表德少克代员许稜先口由死安写性马光白或住'
-            '难望教命花结乐色更拉东神记处让母父应直字场平报友关放至张认接告入笑内英军候民岁往何度山觉路带万男边风解叫任金快原'
-            '吃妈变通师立象数四失满战远格士音轻目条呢病始达深完今提求清王化空业思切怎非找片罗钱吗语元喜整荣波表少言某功项近岸'
-            '千米型识验史感谱配支谈组别称丽改系温带便速效直必美确传画食源观察铁浪命令商连纪基批群导房离调刚随讲响引示渐强装象'
-            '似斗证纸极必居思格造片步状艺设显众争养'
-        )
-        chars.update(common_chars)
-        
-    if options.get('chinese_name', False):
-        # 人名用字集
-        name_chars = '华伟建国志明军平春江红波涛昌鹏飞龙强晓东海峰成荣新刚子杰超艳芳娟秀兰凤英丽娜静敏燕'
-        chars.update(name_chars)
+    if options.get('chinese_all', False):
+        # 全部常用中日韩统一表意文字与扩展 A
+        chars.update(chr(code) for code in range(0x3400, 0x9FFF + 1))
     
     # 扩展字符
     if options.get('currency', False):
@@ -130,7 +115,7 @@ def process_font_file(input_path, options=None):
         
         # 最小化选项，但保留必要的组件
         subsetter_options.name_IDs = ['1', '2']  # 只保留基本名称记录
-        subsetter_options.name_languages = ['0x0409']  # 只保留英文
+        subsetter_options.name_languages = ['0x0409', '0x0804']  # 保留英文与简体中文
         subsetter_options.notdef_glyph = True  # 保留 .notdef 字形
         subsetter_options.notdef_outline = True  # 保留 .notdef 轮廓
         subsetter_options.recommended_glyphs = False  # 禁用推荐字形
@@ -190,13 +175,16 @@ def process_font_file(input_path, options=None):
         
         # 恢复原始字体名称信息
         if 'name' in font and original_names:
-            try:
-                for nameID, record in original_names.items():
-                    font['name'].setName(str(record), record.nameID, record.platformID, 
-                                       record.platEncID, record.langID)
-                logging.debug("成功恢复字体名称信息")
-            except Exception as e:
-                logging.error(f"恢复字体名称时出错: {str(e)}")
+            restored = 0
+            for nameID, record in original_names.items():
+                try:
+                    font['name'].setName(str(record), record.nameID, record.platformID,
+                                         record.platEncID, record.langID)
+                    restored += 1
+                except Exception as e:
+                    # 部分字体的名称记录可能包含异常编码，跳过即可
+                    logging.warning(f"跳过无法恢复的名称记录 {record}: {e}")
+            logging.debug(f"成功恢复 {restored} 条名称记录")
         
         # 使用临时文件保存输出，保持原始扩展名
         logging.debug("开始保存处理后的字体")
