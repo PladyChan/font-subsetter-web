@@ -605,11 +605,11 @@
             }
             
             .left-panel {
-                order: 2; /* 上传卡片在下方 */
+                order: 1; /* 上传卡片在上方 */
             }
             
             .options-panel {
-                order: 1; /* 参数卡片在上方 */
+                order: 2; /* 参数卡片在下方 */
             }
         }
         
@@ -639,11 +639,11 @@
             }
             
             .left-panel {
-                order: 2; /* 上传卡片在下方 */
+                order: 1; /* 上传卡片在上方 */
             }
             
             .options-panel {
-                order: 1; /* 参数卡片在上方 */
+                order: 2; /* 参数卡片在下方 */
             }
             
             .upload-area {
@@ -741,11 +741,11 @@
             }
             
             .left-panel {
-                order: 2; /* 上传卡片在下方 */
+                order: 1; /* 上传卡片在上方 */
             }
             
             .options-panel {
-                order: 1; /* 参数卡片在上方 */
+                order: 2; /* 参数卡片在下方 */
             }
             
             .upload-area {
@@ -825,25 +825,6 @@
     </div>
     
     <div class="container">
-        <div class="left-panel">
-            <div class="upload-area" id="drop-area">
-                <input type="file" id="file-input" accept=".ttf,.otf,.woff,.woff2,.eot,.ttc" multiple style="display: none;">
-                <p style="font-size: clamp(14px, 2.5vw, 18px); margin-bottom: 8px;">拖放字体文件到这里，或点击选择文件</p>
-                <p style="color: var(--text-secondary); font-size: clamp(12px, 2vw, 14px);">支持中英文字体，上传后自动生成下载链接</p>
-                <div class="file-list" id="file-list"></div>
-            </div>
-            
-            <div class="button-group">
-                <button class="button" id="process-btn" disabled>开始处理</button>
-            </div>
-            
-            <div class="result-panel"></div>
-            
-            <div id="result" style="display: none;">
-                <div id="size-info"></div>
-            </div>
-        </div>
-        
         <div class="options-panel">
             <div class="option-section">
                 <h3>文字与标点</h3>
@@ -929,6 +910,25 @@
                               placeholder="请输入需要保留的字符，多个字符之间无需分隔，如：&*…￥" 
                               class="custom-input"></textarea>
                 </div>
+            </div>
+        </div>
+        
+        <div class="left-panel">
+            <div class="upload-area" id="drop-area">
+                <input type="file" id="file-input" accept=".ttf,.otf,.woff,.woff2,.eot,.ttc" multiple style="display: none;">
+                <p style="font-size: clamp(14px, 2.5vw, 18px); margin-bottom: 8px;">拖放字体文件到这里，或点击选择文件</p>
+                <p style="color: var(--text-secondary); font-size: clamp(12px, 2vw, 14px);">支持中英文字体，上传后自动生成下载链接</p>
+                <div class="file-list" id="file-list"></div>
+            </div>
+            
+            <div class="button-group">
+                <button class="button" id="process-btn" disabled>开始处理</button>
+            </div>
+            
+            <div class="result-panel"></div>
+            
+            <div id="result" style="display: none;">
+                <div id="size-info"></div>
             </div>
         </div>
     </div>
