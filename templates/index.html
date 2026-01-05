@@ -719,6 +719,42 @@
         const sizeInfo = document.getElementById('size-info');
         const customCharsInput = document.getElementById('customChars');
         
+        // 将后端/浏览器返回的原始错误消息，转换成用户能理解的中文说明
+        function formatErrorMessage(raw) {
+            if (!raw) return '发生未知错误，请稍后重试。';
+            const msg = String(raw);
+            
+            // 速率限制
+            if (msg.includes('Too Many Requests')) {
+                return '请求过于频繁，请稍等几秒后再重试。如果一次上传很多文件，建议分批处理。';
+            }
+            
+            // Vercel / 上传大小限制
+            if (msg.includes('Forbidden') || msg.includes('413') || msg.includes('Payload Too Large')) {
+                return '文件上传被平台拒绝，通常是文件过大（Vercel 单次上传大约 4.5–5MB）。请压缩或改用更小的字体文件，或在本地/自建服务上处理。';
+            }
+            
+            // TTC 相关错误
+            if (msg.includes('Not a Font Collection')) {
+                return '该文件扩展名是 .ttc，但内容不是标准的字体集合格式，当前无法按 TTC 解析。请尝试使用对应的 .ttf/.otf 版本，或换一个字体文件。';
+            }
+            if (msg.includes('specify a font number') || msg.includes('font number between')) {
+                return '这是一个包含多个子字体的 TTC 文件，目前只支持处理单个子字体，暂时无法自动选择。请改用单字体文件（如 .ttf/.otf）。';
+            }
+            
+            // 服务端返回的通用错误前缀
+            if (msg.startsWith('处理失败:')) {
+                return msg; // 已经是中文
+            }
+            
+            // 其它未知英文错误，做一个通用包装
+            if (/^[\x00-\x7F]+$/.test(msg)) {
+                return `处理失败：${msg}。如果多次重试仍然失败，请截图并联系作者。`;
+            }
+            
+            return msg;
+        }
+        
         // 自定义字符输入框自适应高度
         function autoResizeCustomChars() {
             if (!customCharsInput) return;
@@ -738,7 +774,7 @@
             resultDiv.innerHTML = `
                 <span class="filename">错误</span>
                 <span class="status error">处理失败</span>
-                <span class="error-message">${message}</span>
+                <span class="error-message">${formatErrorMessage(message)}</span>
             `;
             resultPanel.appendChild(resultDiv);
         }
@@ -874,9 +910,9 @@
                                 || rawText 
                                 || `处理失败 (${response.status})`;
                             const message = isForbidden
-                                ? `${baseMsg}。可能是文件超过 Vercel 上传限制（约 4.5-5MB），请压缩或换更小的文件，或改用外部存储/自建后端。`
+                                ? '文件上传被平台拒绝，通常是文件过大（Vercel 单次上传大约 4.5–5MB）。请压缩或改用更小的字体文件，或在本地/自建服务上处理。'
                                 : baseMsg;
-                            throw new Error(message);
+                            throw new Error(formatErrorMessage(message));
                         }
                         
                         if (!parsed || typeof parsed !== 'object') {
@@ -927,7 +963,7 @@
                         resultDiv.innerHTML = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">处理失败</span>
-                            <span class="error-message">${error.message}</span>
+                            <span class="error-message">${formatErrorMessage(error.message)}</span>
                         `;
                         document.querySelector('.result-panel').appendChild(resultDiv);
                     }
@@ -937,7 +973,7 @@
                 
             } catch (error) {
                 console.error('整体处理过程出错:', error);
-                showError('处理过程中出错：' + error.message);
+                showError('处理过程中出错：' + formatErrorMessage(error.message));
             } finally {
                 progress.style.display = 'none';
                 processBtn.disabled = false;
