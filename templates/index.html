@@ -90,7 +90,7 @@
         
         .container {
             width: 100%;
-            max-width: 1400px;
+            max-width: 1000px;
             padding: 20px;
             display: grid;
             grid-template-columns: minmax(300px, 600px) 1fr;
@@ -594,7 +594,7 @@
         @media (max-width: 1024px) {
             .container {
                 grid-template-columns: 1fr;
-                max-width: 800px;
+                max-width: 1000px;
                 gap: 20px;
             }
             
@@ -602,8 +602,8 @@
                 margin-top: 40px;
             }
             
-            .options-panel {
-                order: -1; /* 在小屏幕上，选项面板显示在上方 */
+            .left-panel {
+                order: -1; /* 在窄屏幕上，上传区域显示在上方 */
             }
         }
         
@@ -743,11 +743,9 @@
         }
         
         /* 大屏幕优化 - 提升屏效 */
-        @media (min-width: 1400px) {
+        @media (min-width: 1025px) {
             .container {
-                max-width: 1600px;
-                grid-template-columns: minmax(400px, 700px) 1fr;
-                gap: 32px;
+                max-width: 1000px;
             }
             
             .option-grid {
