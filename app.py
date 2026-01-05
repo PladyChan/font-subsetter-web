@@ -70,7 +70,7 @@ def index():
 def allowed_file(filename):
     """检查文件是否是允许的字体格式"""
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in {'ttf', 'otf', 'woff', 'woff2', 'eot'}
+           filename.rsplit('.', 1)[1].lower() in {'ttf', 'otf', 'woff', 'woff2', 'eot', 'ttc'}
 
 @app.route('/process', methods=['POST'])
 @limiter.limit("30 per minute")

@@ -68,13 +68,22 @@ def get_chars_by_options(options):
 def process_font_file(input_path, options=None):
     """处理字体文件并返回结果"""
     try:
-        # 加载字体文件
-        logging.debug(f"开始加载字体文件: {input_path}")
-        font = TTFont(input_path)
-        logging.debug("字体文件加载成功")
-        
         # 获取原始文件扩展名
         original_ext = os.path.splitext(input_path)[1].lower()
+        
+        # 加载字体文件
+        logging.debug(f"开始加载字体文件: {input_path}")
+        if original_ext == '.ttc':
+            # TTC 是字体集合，需要指定具体的子字体；默认取第 0 个
+            from fontTools.ttLib import TTCollection
+            collection = TTCollection(input_path)
+            if not collection.fonts:
+                raise Exception("TTC 文件中未找到可用子字体")
+            font = collection.fonts[0]
+            logging.debug(f"TTC 字体集合加载成功，包含 {len(collection.fonts)} 个子字体，默认使用第 0 个")
+        else:
+            font = TTFont(input_path)
+            logging.debug("字体文件加载成功")
         
         # 保存原始字体名称信息
         original_names = {}

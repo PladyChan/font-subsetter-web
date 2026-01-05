@@ -11,8 +11,8 @@
             --bg-color: #000000;
             --card-bg: #111111;
             --nav-bg: rgba(255, 255, 255, 0.04);
-            --primary: #5E6AD2;
-            --primary-hover: #7C5CFF;
+            --primary: #3043eb;
+            --primary-hover: #4c5df6;
             --text: #FFFFFF;
             --text-secondary: rgba(255, 255, 255, 0.6);
             --border: rgba(255, 255, 255, 0.1);
@@ -32,10 +32,7 @@
         }
         
         .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            position: static;
             height: 64px;
             background: var(--nav-bg);
             backdrop-filter: blur(8px);
@@ -78,9 +75,14 @@
         .hero p {
             font-size: 20px;
             color: var(--text-secondary);
-            margin: 24px auto;
+            margin: 24px 0;
             max-width: 600px;
             line-height: 1.6;
+            width: fit-content;
+            display: flex;
+            flex-wrap: wrap;
+            height: fit-content;
+            vertical-align: top;
         }
         
         .container {
@@ -585,31 +587,15 @@
     </style>
 </head>
 <body>
-    <div class="nav">
-        <div class="nav-brand">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-right: 8px; vertical-align: middle;">
-                <path d="M3 19h18l-9-15z" stroke="url(#gradient)" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M7 13h10l-5-8z" stroke="url(#gradient)" stroke-width="2" stroke-linejoin="round"/>
-                <defs>
-                    <linearGradient id="gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-                        <stop offset="0%" stop-color="#5E6AD2"/>
-                        <stop offset="100%" stop-color="#7C5CFF"/>
-                    </linearGradient>
-                </defs>
-            </svg>
-            <span>TrimType</span>
-        </div>
-    </div>
-    
     <div class="hero">
-        <h1>TrimType 字体裁剪工具</h1>
-        <p>智能裁剪字体文件，保留必要字符，优化文件大小。快速、精准、可靠。</p>
+        <h1>TrimType</h1>
+        <p>智能裁剪字体文件，保留必要字符，优化文件大小。快速、精准。</p>
     </div>
     
     <div class="container">
         <div class="left-panel">
             <div class="upload-area" id="drop-area">
-                <input type="file" id="file-input" accept=".ttf,.otf,.woff,.woff2,.eot" multiple style="display: none;">
+                <input type="file" id="file-input" accept=".ttf,.otf,.woff,.woff2,.eot,.ttc" multiple style="display: none;">
                 <p style="font-size: 18px; margin-bottom: 8px;">拖放字体文件到这里，或点击选择文件</p>
                 <p style="color: var(--text-secondary);">支持中英文字体，上传后自动生成下载链接</p>
                 <div class="file-list" id="file-list"></div>
@@ -784,7 +770,7 @@
         
         function handleFiles(files) {
             Array.from(files).forEach(file => {
-                if (file.name.match(/\.(ttf|otf|woff|woff2|eot)$/i)) {
+                if (file.name.match(/\.(ttf|otf|woff|woff2|eot|ttc)$/i)) {
                     // 检查文件大小是否超过100MB
                     if (file.size > 100 * 1024 * 1024) {
                         showError(`文件 ${file.name} 超过100MB限制`);
