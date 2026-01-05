@@ -73,7 +73,6 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in {'ttf', 'otf', 'woff', 'woff2', 'eot', 'ttc'}
 
 @app.route('/process', methods=['POST'])
-@limiter.limit("30 per minute")
 def process_font():
     if 'font' not in request.files:
         return jsonify({'error': '未找到字体文件'}), 400

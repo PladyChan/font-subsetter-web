@@ -76,14 +76,20 @@ def process_font_file(input_path, options=None):
         if original_ext == '.ttc':
             # TTC 是字体集合，需要指定具体的子字体；默认取第 0 个
             from fontTools.ttLib import TTCollection
-            collection = TTCollection(input_path)
-            if not collection.fonts:
-                raise Exception("TTC 文件中未找到可用子字体")
-            font = collection.fonts[0]
-            logging.debug(f"TTC 字体集合加载成功，包含 {len(collection.fonts)} 个子字体，默认使用第 0 个")
+            try:
+                collection = TTCollection(input_path)
+                if not collection.fonts:
+                    raise Exception("TTC 文件中未找到可用子字体")
+                font = collection.fonts[0]
+                logging.debug(f"TTC 字体集合加载成功，包含 {len(collection.fonts)} 个子字体，默认使用第 0 个")
+            except Exception as e:
+                # 某些 .ttc 实际可能是普通字体或不符合集合规范，回退为普通字体打开
+                logging.warning(f\"按 TTC 解析失败，将按普通字体重试: {e}\")
+                font = TTFont(input_path)
+                logging.debug(\"按普通字体方式加载成功\")
         else:
             font = TTFont(input_path)
-            logging.debug("字体文件加载成功")
+            logging.debug(\"字体文件加载成功\")
         
         # 保存原始字体名称信息
         original_names = {}
