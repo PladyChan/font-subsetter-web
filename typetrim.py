@@ -93,7 +93,11 @@ def process_font_file(input_path, options=None):
                     font = TTFont(input_path)
                     logging.debug("按普通字体方式加载成功")
                 except Exception as e2:
-                    raise Exception(f"无法加载字体文件：可能是文件格式不正确或已损坏")
+                    error_msg2 = str(e2).lower()
+                    if "load failed" in error_msg2 or "failed to load" in error_msg2:
+                        raise Exception("无法加载字体文件，可能是文件格式不正确、已损坏或不受支持")
+                    else:
+                        raise Exception("无法加载字体文件，可能是文件格式不正确或已损坏")
         else:
             font = TTFont(input_path)
             logging.debug("字体文件加载成功")

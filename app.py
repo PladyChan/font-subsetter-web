@@ -62,6 +62,8 @@ def translate_error_message(error_msg):
         "too many requests": "请求过于频繁，请稍后再试",
         "forbidden": "访问被拒绝，可能是文件过大或服务器限制",
         "internal server error": "服务器内部错误，请稍后重试",
+        "load failed": "无法加载字体文件，可能是文件格式不正确、已损坏或不受支持",
+        "failed to load": "无法加载字体文件，可能是文件格式不正确、已损坏或不受支持",
     }
     
     # 尝试匹配错误消息
@@ -105,6 +107,7 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in {'ttf', 'otf', 'woff', 'woff2', 'eot', 'ttc'}
 
 @app.route('/process', methods=['POST'])
+@limiter.exempt  # 明确豁免速率限制，允许批量处理
 def process_font():
     if 'font' not in request.files:
         return jsonify({'error': '未找到字体文件'}), 400
