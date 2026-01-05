@@ -719,42 +719,6 @@
         const sizeInfo = document.getElementById('size-info');
         const customCharsInput = document.getElementById('customChars');
         
-        // 将后端/浏览器返回的原始错误消息，转换成用户能理解的中文说明
-        function formatErrorMessage(raw) {
-            if (!raw) return '发生未知错误，请稍后重试。';
-            const msg = String(raw);
-            
-            // 速率限制
-            if (msg.includes('Too Many Requests')) {
-                return '请求过于频繁，请稍等几秒后再重试。如果一次上传很多文件，建议分批处理。';
-            }
-            
-            // Vercel / 上传大小限制
-            if (msg.includes('Forbidden') || msg.includes('413') || msg.includes('Payload Too Large')) {
-                return '文件上传被平台拒绝，通常是文件过大（Vercel 单次上传大约 4.5–5MB）。请压缩或改用更小的字体文件，或在本地/自建服务上处理。';
-            }
-            
-            // TTC 相关错误
-            if (msg.includes('Not a Font Collection')) {
-                return '该文件扩展名是 .ttc，但内容不是标准的字体集合格式，当前无法按 TTC 解析。请尝试使用对应的 .ttf/.otf 版本，或换一个字体文件。';
-            }
-            if (msg.includes('specify a font number') || msg.includes('font number between')) {
-                return '这是一个包含多个子字体的 TTC 文件，目前只支持处理单个子字体，暂时无法自动选择。请改用单字体文件（如 .ttf/.otf）。';
-            }
-            
-            // 服务端返回的通用错误前缀
-            if (msg.startsWith('处理失败:')) {
-                return msg; // 已经是中文
-            }
-            
-            // 其它未知英文错误，做一个通用包装
-            if (/^[\x00-\x7F]+$/.test(msg)) {
-                return `处理失败：${msg}。如果多次重试仍然失败，请截图并联系作者。`;
-            }
-            
-            return msg;
-        }
-        
         // 自定义字符输入框自适应高度
         function autoResizeCustomChars() {
             if (!customCharsInput) return;
@@ -774,7 +738,7 @@
             resultDiv.innerHTML = `
                 <span class="filename">错误</span>
                 <span class="status error">处理失败</span>
-                <span class="error-message">${formatErrorMessage(message)}</span>
+                <span class="error-message">${message}</span>
             `;
             resultPanel.appendChild(resultDiv);
         }
@@ -906,17 +870,26 @@
                         
                         if (!response.ok) {
                             const isForbidden = response.status === 403 || (rawText && rawText.includes('Forbidden'));
-                            const baseMsg = (parsed && (parsed.error || parsed.message)) 
+                            let baseMsg = (parsed && (parsed.error || parsed.message)) 
                                 || rawText 
-                                || `处理失败 (${response.status})`;
-                            const message = isForbidden
-                                ? '文件上传被平台拒绝，通常是文件过大（Vercel 单次上传大约 4.5–5MB）。请压缩或改用更小的字体文件，或在本地/自建服务上处理。'
-                                : baseMsg;
-                            throw new Error(formatErrorMessage(message));
+                                || `处理失败 (状态码: ${response.status})`;
+                            
+                            // 确保错误消息是中文
+                            if (isForbidden) {
+                                baseMsg = "文件上传被拒绝。可能是文件超过服务器上传限制（约 4.5-5MB），请尝试压缩文件或使用更小的字体文件。";
+                            } else if (response.status === 429) {
+                                baseMsg = "请求过于频繁，请稍后再试";
+                            } else if (response.status === 413) {
+                                baseMsg = "文件太大，超过 100MB 限制";
+                            } else if (!baseMsg || (!/[\u4e00-\u9fff]/.test(baseMsg) && baseMsg.length < 50)) {
+                                baseMsg = `处理失败（错误代码: ${response.status}）`;
+                            }
+                            
+                            throw new Error(baseMsg);
                         }
                         
                         if (!parsed || typeof parsed !== 'object') {
-                            throw new Error('服务返回格式异常');
+                            throw new Error('服务器返回的数据格式异常，请重试');
                         }
                         const data = parsed;
                         console.log('处理结果:', data);
@@ -958,12 +931,28 @@
                         
                     } catch (error) {
                         console.error('处理文件时出错:', error);
+                        // 确保错误消息是中文
+                        let errorMsg = error.message || '处理失败';
+                        if (!/[\u4e00-\u9fff]/.test(errorMsg)) {
+                            // 如果错误消息不是中文，尝试翻译常见错误
+                            const errorLower = errorMsg.toLowerCase();
+                            if (errorLower.includes('too many requests') || errorLower.includes('429')) {
+                                errorMsg = '请求过于频繁，请稍后再试';
+                            } else if (errorLower.includes('forbidden') || errorLower.includes('403')) {
+                                errorMsg = '文件上传被拒绝，可能是文件过大或服务器限制';
+                            } else if (errorLower.includes('network') || errorLower.includes('fetch')) {
+                                errorMsg = '网络连接失败，请检查网络后重试';
+                            } else {
+                                errorMsg = '处理失败：' + errorMsg;
+                            }
+                        }
+                        
                         const resultDiv = document.createElement('div');
                         resultDiv.className = 'result-item error';
                         resultDiv.innerHTML = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">处理失败</span>
-                            <span class="error-message">${formatErrorMessage(error.message)}</span>
+                            <span class="error-message">${errorMsg}</span>
                         `;
                         document.querySelector('.result-panel').appendChild(resultDiv);
                     }
@@ -973,7 +962,12 @@
                 
             } catch (error) {
                 console.error('整体处理过程出错:', error);
-                showError('处理过程中出错：' + formatErrorMessage(error.message));
+                let errorMsg = error.message || '处理过程中出错';
+                // 确保错误消息是中文
+                if (!/[\u4e00-\u9fff]/.test(errorMsg)) {
+                    errorMsg = '处理过程中出错，请重试';
+                }
+                showError(errorMsg);
             } finally {
                 progress.style.display = 'none';
                 processBtn.disabled = false;

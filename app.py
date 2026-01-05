@@ -43,12 +43,44 @@ def add_security_headers(response):
 def get_temp_dir():
     return tempfile.gettempdir()
 
+# 错误消息翻译函数
+def translate_error_message(error_msg):
+    """将技术错误消息翻译为用户友好的中文提示"""
+    error_msg_lower = error_msg.lower()
+    
+    # 常见错误消息映射
+    translations = {
+        "not a font collection": "该文件不是有效的字体集合格式，已尝试按普通字体处理",
+        "ttc 文件中未找到可用子字体": "字体集合文件中未找到可用的子字体",
+        "未选择任何字符集": "请至少选择一个字符集选项（如英文字母、数字等）",
+        "字符集无效或为空": "字符集配置错误，请重新选择字符集选项",
+        "没有有效的 unicode 字符": "未找到有效的字符，请检查字符集选项",
+        "字符集处理失败": "字符集处理失败，请重新选择字符集选项",
+        "字体处理失败": "字体裁剪处理失败，可能是字体文件格式不支持或已损坏",
+        "无法保存处理后的字体": "保存处理后的字体文件失败，请重试",
+        "处理后的文件大小异常，可能处理失败": "处理后的文件异常，可能是字体文件格式问题",
+        "too many requests": "请求过于频繁，请稍后再试",
+        "forbidden": "访问被拒绝，可能是文件过大或服务器限制",
+        "internal server error": "服务器内部错误，请稍后重试",
+    }
+    
+    # 尝试匹配错误消息
+    for key, value in translations.items():
+        if key in error_msg_lower:
+            return value
+    
+    # 如果没有匹配，返回原始消息（如果已经是中文）或通用提示
+    if any('\u4e00' <= char <= '\u9fff' for char in error_msg):
+        return error_msg
+    else:
+        return f"处理失败：{error_msg}"
+
 # 添加错误处理
 @app.errorhandler(500)
 def handle_500_error(error):
     return jsonify({
-        "error": "Internal Server Error",
-        "message": str(error)
+        "error": "服务器内部错误",
+        "message": "服务器处理请求时发生错误，请稍后重试"
     }), 500
 
 @app.errorhandler(413)
@@ -112,7 +144,7 @@ def process_font():
             
             # 检查处理后的文件大小
             if os.path.getsize(result['output_path']) < 1024:  # 小于1KB
-                raise Exception("处理后的文件大小异常，可能处理失败")
+                raise Exception("处理后的文件大小异常，可能处理失败，请检查字体文件是否有效")
             
             logging.debug(f"字体处理结果: {result}")
             
@@ -142,10 +174,10 @@ def process_font():
             except:
                 pass
                 
+            # 翻译错误消息为用户友好的中文
+            friendly_error = translate_error_message(error_msg)
             return jsonify({
-                'error': f"处理失败: {error_msg}",
-                'error_type': error_type,
-                'stack_trace': stack_trace
+                'error': friendly_error
             }), 500
         
     except Exception as e:
@@ -164,10 +196,10 @@ def process_font():
             except:
                 pass
                 
+        # 翻译错误消息为用户友好的中文
+        friendly_error = translate_error_message(error_msg)
         return jsonify({
-            'error': f"处理失败: {error_msg}",
-            'error_type': error_type,
-            'stack_trace': stack_trace
+            'error': friendly_error
         }), 500
 
 @app.route('/download/<path:filename>', methods=['GET'])
@@ -199,7 +231,8 @@ def download(filename):
         return response
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        friendly_error = translate_error_message(str(e))
+        return jsonify({'error': friendly_error}), 500
 
 @app.route('/favicon.ico')
 def favicon():

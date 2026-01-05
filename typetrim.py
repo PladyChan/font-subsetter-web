@@ -79,17 +79,24 @@ def process_font_file(input_path, options=None):
             try:
                 collection = TTCollection(input_path)
                 if not collection.fonts:
-                    raise Exception("TTC 文件中未找到可用子字体")
+                    raise Exception("字体集合文件中未找到可用的子字体")
                 font = collection.fonts[0]
                 logging.debug(f"TTC 字体集合加载成功，包含 {len(collection.fonts)} 个子字体，默认使用第 0 个")
             except Exception as e:
                 # 某些 .ttc 实际可能是普通字体或不符合集合规范，回退为普通字体打开
-                logging.warning(f\"按 TTC 解析失败，将按普通字体重试: {e}\")
-                font = TTFont(input_path)
-                logging.debug(\"按普通字体方式加载成功\")
+                error_msg = str(e).lower()
+                if "not a font collection" in error_msg:
+                    logging.warning("该文件不是有效的字体集合格式，将按普通字体处理")
+                else:
+                    logging.warning(f"按字体集合解析失败，将按普通字体重试: {e}")
+                try:
+                    font = TTFont(input_path)
+                    logging.debug("按普通字体方式加载成功")
+                except Exception as e2:
+                    raise Exception(f"无法加载字体文件：可能是文件格式不正确或已损坏")
         else:
             font = TTFont(input_path)
-            logging.debug(\"字体文件加载成功\")
+            logging.debug("字体文件加载成功")
         
         # 保存原始字体名称信息
         original_names = {}
@@ -100,7 +107,7 @@ def process_font_file(input_path, options=None):
         # 根据选项构建字符集
         chars = get_chars_by_options(options or {})
         if not chars:
-            raise Exception("未选择任何字符集")
+            raise Exception("请至少选择一个字符集选项（如英文字母、数字、标点符号等）")
         logging.debug(f"字符集构建成功，包含 {len(chars)} 个字符")
         
         # 设置 subsetter 选项
@@ -150,7 +157,7 @@ def process_font_file(input_path, options=None):
         try:
             # 验证字符集
             if not isinstance(chars, set) or not chars:
-                raise ValueError("字符集无效或为空")
+                raise ValueError("字符集配置错误，请重新选择字符集选项")
             
             # 转换字符到 Unicode 码点
             unicodes = set()  # 使用集合去重
@@ -168,7 +175,7 @@ def process_font_file(input_path, options=None):
                     continue
             
             if not unicodes:
-                raise ValueError("没有有效的 Unicode 字符")
+                raise ValueError("未找到有效的字符，请检查字符集选项设置")
             
             # 转换回列表并排序，确保稳定的处理顺序
             unicodes = sorted(list(unicodes))
@@ -178,7 +185,11 @@ def process_font_file(input_path, options=None):
             logging.debug("字符集填充成功")
         except Exception as e:
             logging.error(f"填充字符集时出错: {str(e)}")
-            raise ValueError(f"字符集处理失败: {str(e)}")
+            error_msg = str(e)
+            if "字符集" in error_msg or "字符" in error_msg:
+                raise ValueError(error_msg)
+            else:
+                raise ValueError(f"字符集处理失败：{error_msg}")
         
         try:
             logging.debug("开始子集化处理")
@@ -186,7 +197,15 @@ def process_font_file(input_path, options=None):
             logging.debug("子集化处理成功")
         except Exception as e:
             logging.error(f"子集化处理出错: {str(e)}")
-            raise ValueError(f"字体处理失败: {str(e)}")
+            error_msg = str(e)
+            if "字体" in error_msg or "glyph" in error_msg.lower() or "unicode" in error_msg.lower():
+                # 保持原有消息，但确保是中文
+                if any('\u4e00' <= char <= '\u9fff' for char in error_msg):
+                    raise ValueError(error_msg)
+                else:
+                    raise ValueError(f"字体裁剪处理失败：可能是字体文件格式不支持或已损坏")
+            else:
+                raise ValueError(f"字体裁剪处理失败：{error_msg}")
         
         # 恢复原始字体名称信息
         if 'name' in font and original_names:
@@ -210,7 +229,7 @@ def process_font_file(input_path, options=None):
                 logging.debug(f"字体保存成功: {output_path}")
         except Exception as e:
             logging.error(f"保存字体文件时出错: {str(e)}")
-            raise ValueError(f"无法保存处理后的字体: {str(e)}")
+            raise ValueError("无法保存处理后的字体文件，请重试")
         
         # 计算文件大小
         original_size = os.path.getsize(input_path) / 1024
@@ -232,4 +251,19 @@ def process_font_file(input_path, options=None):
         logging.error(f"错误类型: {type(e)}")
         import traceback
         logging.error(f"错误堆栈: {traceback.format_exc()}")
-        raise Exception(f"处理字体文件时出错: {str(e)}") 
+        
+        # 如果错误消息已经是友好的中文，直接抛出
+        error_msg = str(e)
+        if any('\u4e00' <= char <= '\u9fff' for char in error_msg):
+            raise Exception(error_msg)
+        else:
+            # 根据错误类型提供友好的中文提示
+            error_lower = error_msg.lower()
+            if "not a font collection" in error_lower:
+                raise Exception("该文件不是有效的字体集合格式")
+            elif "font" in error_lower and ("invalid" in error_lower or "corrupt" in error_lower):
+                raise Exception("字体文件格式不正确或已损坏，请检查文件是否完整")
+            elif "permission" in error_lower or "access" in error_lower:
+                raise Exception("无法访问字体文件，请检查文件权限")
+            else:
+                raise Exception(f"处理字体文件时出错：{error_msg}") 
