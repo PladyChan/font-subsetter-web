@@ -1,5 +1,5 @@
 """
-TypeTrim - Smart Font Subsetting Tool
+TrimType字体裁剪工具
 -----------------------------------
 Copyright (c) 2024 PladyChan
 All rights reserved.

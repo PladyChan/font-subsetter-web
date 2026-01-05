@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# 一键本地启动脚本
+# 一键本地启动脚本（简化版，不使用虚拟环境，直接用系统 Python）
 # 支持自定义变量：
 #   PYTHON               指定 Python 可执行文件（默认 python3）
 #   PIP_INDEX_URL        指定 PyPI 镜像（默认清华）
@@ -26,25 +26,11 @@ fi
 PYTHON_VERSION=$("$PYTHON" --version 2>&1 | awk '{print $2}')
 echo "[INFO] 检测到 Python 版本: $PYTHON_VERSION"
 
-VENV="$ROOT/.venv"
-
-if [ ! -x "$VENV/bin/python" ]; then
-  echo "[INFO] 创建虚拟环境 $VENV"
-  "$PYTHON" -m venv "$VENV"
-fi
-
-source "$VENV/bin/activate"
-
 PIP_INDEX_URL="${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
 PIP_EXTRA_INDEX_URL="${PIP_EXTRA_INDEX_URL:-}"
 
-# 确保虚拟环境中有 pip，并始终使用 venv 里的 pip
-PIP_CMD="$VENV/bin/pip"
-if [ ! -x "$PIP_CMD" ]; then
-  echo "[INFO] 虚拟环境中未找到 pip，正在安装..."
-  "$VENV/bin/python" -m ensurepip --upgrade
-  PIP_CMD="$VENV/bin/pip"
-fi
+# 使用系统 Python 的 pip
+PIP_CMD="$PYTHON -m pip"
 
 # 检查 requirements.txt 是否存在
 if [ ! -f "requirements.txt" ]; then
@@ -53,18 +39,18 @@ if [ ! -f "requirements.txt" ]; then
 fi
 
 echo "[INFO] 升级 pip"
-"$PIP_CMD" install --upgrade pip >/dev/null 2>&1 || {
+$PIP_CMD install --upgrade pip 2>/dev/null || {
     echo "[WARN] pip 升级失败，继续尝试安装依赖..."
 }
 
 echo "[INFO] 安装依赖（镜像：$PIP_INDEX_URL）"
 if [ -n "$PIP_EXTRA_INDEX_URL" ]; then
-  "$PIP_CMD" install -r requirements.txt -i "$PIP_INDEX_URL" --extra-index-url "$PIP_EXTRA_INDEX_URL" || {
+  $PIP_CMD install -r requirements.txt -i "$PIP_INDEX_URL" --extra-index-url "$PIP_EXTRA_INDEX_URL" || {
     echo "[ERROR] 依赖安装失败，请检查网络连接或 Python 环境"
     exit 1
   }
 else
-  "$PIP_CMD" install -r requirements.txt -i "$PIP_INDEX_URL" || {
+  $PIP_CMD install -r requirements.txt -i "$PIP_INDEX_URL" || {
     echo "[ERROR] 依赖安装失败，请检查网络连接或 Python 环境"
     exit 1
   }
@@ -93,16 +79,9 @@ if [ ! -f "$FLASK_APP" ]; then
     exit 1
 fi
 
-# 确保使用虚拟环境中的 Python
-PYTHON_CMD="$VENV/bin/python"
-if [ ! -x "$PYTHON_CMD" ]; then
-    echo "[ERROR] 虚拟环境中未找到 Python，请检查虚拟环境是否创建成功"
-    exit 1
-fi
-
 # 后台启动服务，等待几秒后打开浏览器
 echo "[INFO] 正在启动 Flask 服务..."
-"$PYTHON_CMD" "$FLASK_APP" &
+"$PYTHON" "$FLASK_APP" &
 SERVER_PID=$!
 
 # 等待服务启动

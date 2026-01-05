@@ -1,6 +1,6 @@
-# TypeTrim - Smart Font Subsetting Tool
+# TrimType字体裁剪工具
 
-一个智能的字体子集化工具，帮助优化字体文件大小。
+一个智能的字体裁剪工具，帮助优化字体文件大小。
 
 ## 功能特点
 
@@ -11,7 +11,7 @@
 
 ## 使用方法
 
-1. 访问 [TypeTrim](https://font-subsetter-web.vercel.app)
+1. 访问 [TrimType字体裁剪工具](https://font-subsetter-web.vercel.app)
 2. 上传字体文件
 3. 选择需要保留的字符集
 4. 下载优化后的字体文件

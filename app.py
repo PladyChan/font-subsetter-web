@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 import os
 import json
 import tempfile
-from typetrim import process_font_file  # 导入原始的 TypeTrim 功能
+from typetrim import process_font_file  # 导入 TrimType 字体裁剪功能
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -107,7 +107,7 @@ def process_font():
             input_path = input_temp.name
             
         try:
-            # 使用 TypeTrim 处理字体
+            # 使用 TrimType 处理字体
             logging.debug(f"开始处理字体文件: {input_path}")
             result = process_font_file(input_path, options)
             
@@ -211,4 +211,7 @@ def favicon():
     )
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    import os
+    host = os.environ.get('FLASK_HOST', '127.0.0.1')
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    app.run(host=host, port=port, debug=True) 
