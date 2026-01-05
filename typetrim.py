@@ -121,11 +121,11 @@ def process_font_file(input_path, options=None):
         subsetter_options.layout_features = []
         subsetter_options.layout_features_exclude = ['*']  # 禁用所有特性
         
-        # 禁用所有可能的表
+        # 禁用不必要的表，但保留 macOS 识别字体所需的关键表
+        # 注意：kern 表对 macOS 识别字体很重要，不能移除
         subsetter_options.drop_tables = [
             'GPOS',  # 禁用高级定位
-            'GSUB',  # 禁用字形替换
-            'kern',  # 禁用字距调整
+            'GSUB',  # 禁用字形替换（但保留基本字形）
             'morx',  # 禁用扩展变形
             'feat',  # 禁用布局特性
             'lcar',  # 禁用连字调整
@@ -138,15 +138,18 @@ def process_font_file(input_path, options=None):
             'sbix',  # 禁用位图
             'STAT',  # 禁用样式属性
         ]
+        # 不删除 kern 表，macOS 可能需要它来识别字体
         
-        # 最小化选项，但保留必要的组件
-        subsetter_options.name_IDs = ['1', '2']  # 只保留基本名称记录
-        subsetter_options.name_languages = ['0x0409', '0x0804']  # 保留英文与简体中文
+        # 保留 macOS 识别字体所需的关键名称记录
+        # name ID 1: 字体族名, 2: 子族名, 4: 完整字体名, 6: PostScript 名称
+        subsetter_options.name_IDs = ['1', '2', '4', '6']  # 保留 macOS 需要的名称记录
+        # 保留更多语言，确保 macOS 能识别
+        subsetter_options.name_languages = ['*']  # 保留所有语言记录，确保兼容性
         subsetter_options.notdef_glyph = True  # 保留 .notdef 字形
         subsetter_options.notdef_outline = True  # 保留 .notdef 轮廓
         subsetter_options.recommended_glyphs = False  # 禁用推荐字形
-        subsetter_options.hinting = False  # 禁用 hinting
-        subsetter_options.legacy_kern = False  # 禁用传统字距调整
+        subsetter_options.hinting = True  # 保留 hinting，macOS 可能需要
+        subsetter_options.legacy_kern = True  # 保留传统字距调整，macOS 可能需要
         subsetter_options.ignore_missing_glyphs = True
         subsetter_options.ignore_missing_unicodes = True
         subsetter_options.retain_gids = False  # 不保留原始字形ID
@@ -211,17 +214,30 @@ def process_font_file(input_path, options=None):
             else:
                 raise ValueError(f"字体裁剪处理失败：{error_msg}")
         
-        # 恢复原始字体名称信息
+        # 恢复原始字体名称信息，确保 macOS 能识别
         if 'name' in font and original_names:
             restored = 0
+            # 优先恢复关键的名称记录（macOS 需要的）
+            critical_name_ids = [1, 2, 4, 6]  # 字体族名、子族名、完整名称、PostScript名称
+            for nameID in critical_name_ids:
+                if nameID in original_names:
+                    try:
+                        record = original_names[nameID]
+                        font['name'].setName(str(record), record.nameID, record.platformID,
+                                             record.platEncID, record.langID)
+                        restored += 1
+                    except Exception as e:
+                        logging.warning(f"跳过无法恢复的关键名称记录 {nameID}: {e}")
+            
+            # 然后恢复其他名称记录
             for nameID, record in original_names.items():
-                try:
-                    font['name'].setName(str(record), record.nameID, record.platformID,
-                                         record.platEncID, record.langID)
-                    restored += 1
-                except Exception as e:
-                    # 部分字体的名称记录可能包含异常编码，跳过即可
-                    logging.warning(f"跳过无法恢复的名称记录 {record}: {e}")
+                if nameID not in critical_name_ids:
+                    try:
+                        font['name'].setName(str(record), record.nameID, record.platformID,
+                                             record.platEncID, record.langID)
+                        restored += 1
+                    except Exception as e:
+                        logging.warning(f"跳过无法恢复的名称记录 {record}: {e}")
             logging.debug(f"成功恢复 {restored} 条名称记录")
         
         # 使用临时文件保存输出，保持原始扩展名
