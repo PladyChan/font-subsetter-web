@@ -3,6 +3,7 @@
 <head>
     <title>TrimType字体裁剪工具</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <link rel="icon" type="image/svg+xml" href="static/favicon.svg">
     <link rel="icon" type="image/png" href="static/favicon.png">
     <link rel="shortcut icon" href="static/favicon.ico">
@@ -57,13 +58,15 @@
         }
         
         .hero {
-            margin-top: 120px;
+            margin-top: 60px;
             text-align: center;
             padding: 0 20px;
+            width: 100%;
+            max-width: 100%;
         }
         
         .hero h1 {
-            font-size: 64px;
+            font-size: clamp(32px, 5vw, 64px);
             font-weight: 600;
             line-height: 1.2;
             margin: 0;
@@ -73,9 +76,9 @@
         }
         
         .hero p {
-            font-size: 20px;
+            font-size: clamp(14px, 2vw, 20px);
             color: var(--text-secondary);
-            margin: 24px 0;
+            margin: 16px auto 24px;
             max-width: 600px;
             line-height: 1.6;
             width: fit-content;
@@ -86,12 +89,14 @@
         }
         
         .container {
-            width: 1200px;
+            width: 100%;
+            max-width: 1400px;
             padding: 20px;
             display: grid;
-            grid-template-columns: 600px 1fr;
-            gap: 24px;
+            grid-template-columns: minmax(300px, 600px) 1fr;
+            gap: clamp(16px, 3vw, 24px);
             align-items: start;
+            margin: 0 auto;
         }
         
         .left-panel {
@@ -103,7 +108,7 @@
         .upload-area {
             background: var(--card-bg);
             border-radius: 16px;
-            padding: 32px;
+            padding: clamp(20px, 4vw, 32px);
             text-align: center;
             border: 1px solid var(--border);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -266,9 +271,9 @@
         
         .option-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            column-gap: 12px;
-            row-gap: 12px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            column-gap: clamp(8px, 2vw, 12px);
+            row-gap: clamp(8px, 2vw, 12px);
             width: 100%;
             margin-bottom: 12px;
         }
@@ -583,6 +588,210 @@
         #downloadArea {
             margin: 20px 0;
             text-align: center;
+        }
+        
+        /* 响应式布局 - 平板和中等屏幕 */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                max-width: 800px;
+                gap: 20px;
+            }
+            
+            .hero {
+                margin-top: 40px;
+            }
+            
+            .options-panel {
+                order: -1; /* 在小屏幕上，选项面板显示在上方 */
+            }
+        }
+        
+        /* 响应式布局 - 移动端 */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            
+            .hero {
+                margin-top: 30px;
+                padding: 0 16px;
+            }
+            
+            .hero h1 {
+                font-size: 32px;
+            }
+            
+            .hero p {
+                font-size: 14px;
+                margin: 12px auto 20px;
+            }
+            
+            .container {
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            .upload-area {
+                padding: 24px 16px;
+            }
+            
+            .upload-area p {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            
+            .file-list {
+                max-height: 200px;
+            }
+            
+            .button-group {
+                margin: 16px 0;
+                gap: 12px;
+            }
+            
+            .option-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .option-section {
+                padding: 16px 0 8px;
+            }
+            
+            .option-section h3 {
+                font-size: 12px;
+                margin: 0 0 12px 0;
+            }
+            
+            .options-panel {
+                padding: 0 16px;
+            }
+            
+            .button {
+                padding: 0 24px;
+                height: 44px;
+                font-size: 14px;
+            }
+            
+            .file-result {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .file-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                width: 100%;
+            }
+            
+            .file-stats {
+                flex-wrap: wrap;
+                gap: 12px;
+                width: 100%;
+            }
+            
+            .file-name {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .result-item .error-message {
+                margin-left: 0;
+                word-break: break-word;
+            }
+        }
+        
+        /* 响应式布局 - 超小屏幕 */
+        @media (max-width: 480px) {
+            .hero {
+                margin-top: 20px;
+            }
+            
+            .hero h1 {
+                font-size: 28px;
+            }
+            
+            .container {
+                padding: 12px;
+            }
+            
+            .upload-area {
+                padding: 20px 12px;
+            }
+            
+            .options-panel {
+                padding: 0 12px;
+            }
+            
+            .option-item {
+                padding: 8px;
+            }
+            
+            .option-text {
+                font-size: 13px;
+            }
+        }
+        
+        /* 大屏幕优化 - 提升屏效 */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1600px;
+                grid-template-columns: minmax(400px, 700px) 1fr;
+                gap: 32px;
+            }
+            
+            .option-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* 横屏优化 */
+        @media (max-width: 1024px) and (orientation: landscape) {
+            .hero {
+                margin-top: 20px;
+            }
+            
+            .container {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+        
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            .button {
+                min-height: 48px;
+                padding: 0 32px;
+            }
+            
+            .option-item {
+                min-height: 44px;
+            }
+            
+            .file-item {
+                min-height: 44px;
+            }
+        }
+        
+        /* 高分辨率屏幕优化 */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .upload-area::before {
+                height: 0.5px;
+            }
+            
+            .options-panel::before {
+                height: 0.5px;
+            }
         }
     </style>
 </head>
