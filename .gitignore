@@ -2,3 +2,9 @@ __pycache__/
 .env
 *.pyc
 .DS_Store
+.venv/
+venv/
+*.ttf
+*.otf
+*.woff
+*.woff2

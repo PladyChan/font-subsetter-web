@@ -16,7 +16,7 @@ chmod +x run_local.sh 2>/dev/null || true
 # 执行启动脚本
 echo "=========================================="
 echo "  TrimType字体裁剪工具 - 本地服务启动器"
-echo "  Designed & Developed by Plady"
+echo "  Designed & Developed by Plady U^ᴥ^U"
 echo "=========================================="
 echo ""
 
