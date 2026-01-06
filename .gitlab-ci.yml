@@ -1,0 +1,44 @@
+# GitLab CI/CD 配置文件
+# 用于阿里内部 GitLab 平台的自动构建和部署
+
+stages:
+  - build
+  - deploy
+
+variables:
+  PIP_INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
+  PYTHON_VERSION: "3.9"
+
+# 构建阶段
+build:
+  stage: build
+  image: python:3.9-slim
+  before_script:
+    - python3 --version
+    - pip install --upgrade pip -i $PIP_INDEX_URL
+  script:
+    - pip install -r requirements.txt -i $PIP_INDEX_URL
+    - echo "构建完成"
+  artifacts:
+    paths:
+      - .
+    expire_in: 1 hour
+  only:
+    - master
+    - release-*
+
+# 部署阶段（根据平台实际情况调整）
+deploy:
+  stage: deploy
+  image: python:3.9-slim
+  dependencies:
+    - build
+  script:
+    - echo "部署到生产环境..."
+    # 这里可以添加具体的部署命令
+    # 例如：调用平台的部署 API 或执行部署脚本
+  only:
+    - master
+    - release-*
+  when: manual  # 手动触发部署
+
