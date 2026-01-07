@@ -38,6 +38,20 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* 全局烟花效果容器 - 放在 body 背景层 */
+        .fireworks-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0; /* 在最底层，作为背景 */
+            overflow: hidden;
         }
         
         /* 允许输入框和文本区域选择文本 */
@@ -49,7 +63,7 @@
         }
         
         .nav {
-            position: static;
+            position: relative;
             height: 64px;
             background: var(--nav-bg);
             backdrop-filter: blur(8px);
@@ -57,7 +71,7 @@
             display: flex;
             align-items: center;
             padding: 0 40px;
-            z-index: 100;
+            z-index: 10;
         }
         
         .nav-brand {
@@ -77,7 +91,7 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1000;
+            z-index: 10;
             display: flex;
             gap: 8px;
             background: var(--card-bg);
@@ -116,6 +130,57 @@
             padding: 0 20px;
             width: 100%;
             max-width: 100%;
+            position: relative;
+            z-index: 1; /* 确保内容在烟花之上 */
+        }
+        
+        .firework {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: firework-explode 0.8s ease-out forwards;
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        @keyframes firework-explode {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+        }
+        
+        .firework-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-fly 1.5s ease-out forwards;
+            box-shadow: 0 0 8px currentColor;
+        }
+        
+        @keyframes particle-fly {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
         }
         
         .hero h1 {
@@ -133,11 +198,31 @@
             cursor: pointer;
             transition: all 0.3s ease;
             user-select: none;
+            position: relative;
+            z-index: 1; /* 确保文字在烟花之上 */
         }
         
         .hero h1:hover {
             transform: scale(1.05);
             opacity: 0.9;
+        }
+        
+        .hero p {
+            position: relative;
+            z-index: 1; /* 确保文字在烟花之上 */
+        }
+        
+        /* 确保所有内容层在烟花之上 */
+        .nav,
+        .container,
+        footer {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 语言切换器保持 fixed 定位在右上角 */
+        .language-switcher {
+            z-index: 10; /* 确保在烟花之上，但保持 fixed 定位 */
         }
         
         .hero p {
@@ -168,6 +253,8 @@
             margin: 0;
             margin-left: 0px;
             margin-right: 0px;
+            position: relative;
+            z-index: 1;
         }
         
         .left-panel {
@@ -422,6 +509,7 @@
             font-weight: 600;
             display: none;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 1000; /* 确保进度条在最上层 */
         }
         
         .file-result {
@@ -716,7 +804,7 @@
             }
             
             .hero {
-                margin-top: 30px;
+                margin-top: 40px;
                 padding: 0 16px;
             }
             
@@ -826,7 +914,7 @@
         /* 响应式布局 - 超小屏幕 */
         @media (max-width: 480px) {
             .hero {
-                margin-top: 20px;
+                margin-top: 40px;
             }
             
             .hero h1 {
@@ -881,7 +969,7 @@
         /* 横屏优化 */
         @media (max-width: 1000px) and (orientation: landscape) {
             .hero {
-                margin-top: 20px;
+                margin-top: 40px;
             }
             
             .container {
@@ -893,7 +981,7 @@
         /* 横屏且宽度足够时保持两列 */
         @media (min-width: 1001px) and (max-width: 1024px) and (orientation: landscape) {
             .hero {
-                margin-top: 20px;
+                margin-top: 40px;
             }
             
             .container {
@@ -1274,10 +1362,113 @@
             h1.style.fontFamily = '"Climate Crisis", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
         }
         
-        // 点击 h1 标题切换字体
+        // 点击计数器（用于烟花彩蛋）
+        let clickCount = 0;
+        const CLICK_THRESHOLD = 10; // 触发烟花的点击次数
+        
+        // 烟花效果函数
+        function createFireworks() {
+            // 创建全局烟花容器（如果不存在）
+            let container = document.querySelector('.fireworks-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'fireworks-container';
+                document.body.appendChild(container);
+            }
+            
+            // 清除之前的烟花
+            container.innerHTML = '';
+            
+            // 创建多个烟花
+            const fireworkCount = 30;
+            const colors = ['#3043eb', '#4c5df6', '#ff6b6b', '#4ecdc4', '#ffe66d', '#ff6b9d', '#c44569', '#f8b500', '#ff4757', '#5f27cd'];
+            
+            for (let i = 0; i < fireworkCount; i++) {
+                setTimeout(() => {
+                    createSingleFirework(container, colors);
+                }, i * 30); // 错开时间，形成连续效果
+            }
+            
+            // 3秒后清除烟花容器
+            setTimeout(() => {
+                if (container) {
+                    container.innerHTML = '';
+                }
+            }, 3000);
+        }
+        
+        // 创建单个烟花
+        function createSingleFirework(container, colors) {
+            // 在整个视窗范围内随机位置
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * window.innerHeight * 0.7; // 主要在上半部分，但覆盖整个页面
+            
+            // 创建烟花中心
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = x + 'px';
+            firework.style.top = y + 'px';
+            firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            firework.style.boxShadow = `0 0 10px ${firework.style.backgroundColor}`;
+            container.appendChild(firework);
+            
+                // 创建粒子效果
+                const particleCount = 16;
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'firework-particle';
+                    particle.style.left = x + 'px';
+                    particle.style.top = y + 'px';
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.backgroundColor = color;
+                    particle.style.color = color;
+                    
+                    // 计算粒子飞散方向
+                    const angle = (Math.PI * 2 * i) / particleCount;
+                    const distance = 60 + Math.random() * 80;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance;
+                    
+                    particle.style.setProperty('--tx', tx + 'px');
+                    particle.style.setProperty('--ty', ty + 'px');
+                    
+                    container.appendChild(particle);
+                }
+            
+            // 移除元素
+            setTimeout(() => {
+                if (firework.parentNode) {
+                    firework.parentNode.removeChild(firework);
+                }
+                document.querySelectorAll('.firework-particle').forEach(p => {
+                    if (p.parentNode) {
+                        p.parentNode.removeChild(p);
+                    }
+                });
+            }, 2000);
+        }
+        
+        // 点击 h1 标题的处理函数
+        function handleH1Click() {
+            // 切换字体
+            switchRandomFont();
+            
+            // 增加点击计数
+            clickCount++;
+            
+            // 检查是否达到触发条件
+            if (clickCount >= CLICK_THRESHOLD) {
+                // 触发烟花效果
+                createFireworks();
+                // 重置计数器（可选：如果想再次触发，可以重置为0）
+                clickCount = 0;
+            }
+        }
+        
+        // 点击 h1 标题切换字体和计数
         const heroH1 = document.querySelector('.hero h1');
         if (heroH1) {
-            heroH1.addEventListener('click', switchRandomFont);
+            heroH1.addEventListener('click', handleH1Click);
         }
         
         let currentFiles = new Set();
