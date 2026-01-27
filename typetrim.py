@@ -114,6 +114,13 @@ def process_font_file(input_path, options=None):
             raise Exception("请至少选择一个字符集选项（如英文字母、数字、标点符号等）")
         logging.debug(f"字符集构建成功，包含 {len(chars)} 个字符")
         
+        # 检测是否为可变字体（通过检查 fvar 表）
+        is_variable_font = 'fvar' in font
+        if is_variable_font:
+            logging.debug("检测到可变字体，将保留可变字体相关表（gvar, cvar, STAT, fvar）")
+        else:
+            logging.debug("检测到非可变字体，将删除可变字体相关表以减小文件大小")
+        
         # 设置 subsetter 选项
         subsetter_options = Options()
         
@@ -123,21 +130,30 @@ def process_font_file(input_path, options=None):
         
         # 禁用不必要的表，但保留 macOS 识别字体所需的关键表
         # 注意：kern 表对 macOS 识别字体很重要，不能移除
-        subsetter_options.drop_tables = [
+        # 对于可变字体，需要保留 gvar, cvar, STAT, fvar 等表以保持字重变化能力
+        drop_tables = [
             'GPOS',  # 禁用高级定位
             'GSUB',  # 禁用字形替换（但保留基本字形）
             'morx',  # 禁用扩展变形
             'feat',  # 禁用布局特性
             'lcar',  # 禁用连字调整
-            'gvar',  # 禁用字形变化
-            'cvar',  # 禁用CVT变化
             'JSTF',  # 禁用对齐
             'MATH',  # 禁用数学排版
             'COLR',  # 禁用颜色
             'CPAL',  # 禁用调色板
             'sbix',  # 禁用位图
-            'STAT',  # 禁用样式属性
         ]
+        
+        # 如果不是可变字体，可以删除可变字体相关的表以减小文件大小
+        if not is_variable_font:
+            drop_tables.extend([
+                'gvar',  # 禁用字形变化（仅非可变字体）
+                'cvar',  # 禁用CVT变化（仅非可变字体）
+                'STAT',  # 禁用样式属性（仅非可变字体）
+            ])
+        # 如果是可变字体，保留 gvar, cvar, STAT, fvar 表以保持字重变化能力
+        
+        subsetter_options.drop_tables = drop_tables
         # 不删除 kern 表，macOS 可能需要它来识别字体
         
         # 保留 macOS 识别字体所需的关键名称记录
