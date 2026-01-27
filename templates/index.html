@@ -87,11 +87,17 @@
             -webkit-text-fill-color: transparent;
         }
         
-        .language-switcher {
+        .top-bar {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .language-switcher {
             display: flex;
             gap: 8px;
             background: var(--card-bg);
@@ -220,9 +226,9 @@
             z-index: 1;
         }
         
-        /* 语言切换器保持 fixed 定位在右上角 */
-        .language-switcher {
-            z-index: 10; /* 确保在烟花之上，但保持 fixed 定位 */
+        /* 顶部栏保持 fixed 定位在右上角 */
+        .top-bar {
+            z-index: 10; /* 确保在烟花之上 */
         }
         
         .hero p {
@@ -237,6 +243,29 @@
             height: fit-content;
             vertical-align: top;
             letter-spacing: 3.3px;
+        }
+        
+        .download-local-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .download-local-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(94, 106, 210, 0.2);
         }
         
         .container {
@@ -791,9 +820,13 @@
                 padding: 0;
             }
             
-            .language-switcher {
+            .top-bar {
                 top: 12px;
                 right: 12px;
+                gap: 8px;
+            }
+            
+            .language-switcher {
                 padding: 3px;
                 gap: 4px;
             }
@@ -801,6 +834,11 @@
             .lang-btn {
                 padding: 5px 10px;
                 font-size: 12px;
+            }
+            
+            .download-local-btn {
+                font-size: 12px;
+                padding: 6px 16px;
             }
             
             .hero {
@@ -1019,9 +1057,12 @@
     </style>
 </head>
 <body>
-    <div class="language-switcher">
-        <button class="lang-btn active" data-lang="zh">中文</button>
-        <button class="lang-btn" data-lang="en">English</button>
+    <div class="top-bar">
+        <a href="/download/local" class="download-local-btn" data-i18n="download-local">下载本地版</a>
+        <div class="language-switcher">
+            <button class="lang-btn active" data-lang="zh">中</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+        </div>
     </div>
     
     <div class="hero">
@@ -1152,6 +1193,7 @@
         const translations = {
             zh: {
                 'hero-subtitle': '智能裁剪字体文件 · 从未有过的畅快体验',
+                'download-local': '下载本地版',
                 'upload-drag': '拖放字体文件或点击这里',
                 'upload-desc': '支持中英文字体，处理后自动下载',
                 'btn-process': '开始处理',
@@ -1182,6 +1224,9 @@
                 'upload-rejected': '文件上传被拒绝。可能是文件超过服务器上传限制（约 4.5-5MB），请尝试压缩文件或使用更小的字体文件。',
                 'too-many-requests': '请求过于频繁，请稍后再试',
                 'file-too-big': '文件太大，超过 100MB 限制',
+                'file-too-big-suggestion': '文件超过 100MB 限制，建议下载本地版进行处理',
+                'download-local-suggestion': '💡 提示：文件过大时，可以使用本地版进行处理，无文件大小限制',
+                'download-local-link': '点击下载本地版',
                 'process-failed-code': '处理失败（错误代码: {code}）',
                 'server-error': '服务器返回的数据格式异常，请重试',
                 'upload-rejected-desc': '文件上传被拒绝，可能是文件过大或服务器限制',
@@ -1191,6 +1236,7 @@
             },
             en: {
                 'hero-subtitle': 'Smart Font Trimming · Unprecedented Experience',
+                'download-local': 'Download Local Version',
                 'upload-drag': 'Drag font files here or click to select',
                 'upload-desc': 'Supports Chinese and English fonts, auto-download after processed',
                 'btn-process': 'Start Processing',
@@ -1221,6 +1267,9 @@
                 'upload-rejected': 'File upload rejected. The file may exceed server upload limit (approx. 4.5-5MB), please try compressing the file or use a smaller font file.',
                 'too-many-requests': 'Too many requests, please try again later',
                 'file-too-big': 'File too large, exceeds 100MB limit',
+                'file-too-big-suggestion': 'File exceeds 100MB limit, suggest downloading local version for processing',
+                'download-local-suggestion': '💡 Tip: For large files, you can use the local version with no file size limit',
+                'download-local-link': 'Click to download local version',
                 'process-failed-code': 'Processing failed (Error code: {code})',
                 'server-error': 'Server returned invalid data format, please retry',
                 'upload-rejected-desc': 'File upload rejected, may be due to file size or server restrictions',
@@ -1536,7 +1585,24 @@
                 if (file.name.match(/\.(ttf|otf|woff|woff2|eot|ttc)$/i)) {
                     // 检查文件大小是否超过100MB
                     if (file.size > 100 * 1024 * 1024) {
-                        showError(t('file-too-large', { filename: file.name }));
+                        // 显示文件大小错误，包含下载本地版提示
+                        const resultPanel = document.querySelector('.result-panel');
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'result-item error';
+                        resultDiv.innerHTML = `
+                            <span class="filename">${file.name}</span>
+                            <span class="status error">${t('process-failed')}</span>
+                            <span class="error-message">${t('file-too-big-suggestion')}</span>
+                            <div class="error-suggestion" style="margin-top: 8px; padding: 12px; background: rgba(94, 106, 210, 0.1); border-radius: 8px; border-left: 3px solid var(--primary);">
+                                <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">
+                                    ${t('download-local-suggestion')}
+                                </div>
+                                <a href="/download/local" class="download-local-link" style="display: inline-block; padding: 6px 16px; background: var(--primary); color: var(--text); border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
+                                    ${t('download-local-link')}
+                                </a>
+                            </div>
+                        `;
+                        resultPanel.appendChild(resultDiv);
                         return;
                     }
                     currentFiles.add(file);
@@ -1638,18 +1704,41 @@
                                 || rawText 
                                 || t('process-failed-code', { code: response.status });
                             
+                            // 检查是否建议下载本地版
+                            const suggestDownloadLocal = parsed && parsed.suggest_download_local;
+                            const downloadLocalUrl = parsed && parsed.download_local_url || '/download/local';
+                            
                             // 根据状态码设置错误消息
                             if (isForbidden) {
                                 baseMsg = t('upload-rejected');
                             } else if (response.status === 429) {
                                 baseMsg = t('too-many-requests');
-                            } else if (response.status === 413) {
-                                baseMsg = t('file-too-big');
+                            } else if (response.status === 413 || response.status === 400) {
+                                // 检查是否是文件大小错误
+                                const isFileSizeError = baseMsg && (
+                                    baseMsg.includes('100MB') || 
+                                    baseMsg.includes('100mb') || 
+                                    baseMsg.includes('文件太大') || 
+                                    baseMsg.includes('文件超过') ||
+                                    suggestDownloadLocal
+                                );
+                                if (isFileSizeError) {
+                                    baseMsg = t('file-too-big-suggestion');
+                                } else {
+                                    baseMsg = t('file-too-big');
+                                }
                             } else if (!baseMsg || baseMsg.length < 50) {
                                 baseMsg = t('process-failed-code', { code: response.status });
                             }
                             
-                            throw new Error(baseMsg);
+                            // 创建错误对象，包含下载本地版信息
+                            const error = new Error(baseMsg);
+                            if (suggestDownloadLocal || (response.status === 413 || (response.status === 400 && baseMsg.includes('100MB')))) {
+                                error.suggestDownloadLocal = true;
+                                error.downloadLocalUrl = downloadLocalUrl;
+                            }
+                            
+                            throw error;
                         }
                         
                         if (!parsed || typeof parsed !== 'object') {
@@ -1698,23 +1787,55 @@
                         // 处理错误消息
                         let errorMsg = error.message || t('process-failed');
                         const errorLower = errorMsg.toLowerCase();
+                        let suggestDownloadLocal = error.suggestDownloadLocal || false;
+                        let downloadLocalUrl = error.downloadLocalUrl || '/download/local';
+                        
+                        // 检查是否是文件大小相关错误
+                        const isFileSizeError = errorLower.includes('100mb') || 
+                                               errorLower.includes('100 mb') || 
+                                               errorLower.includes('文件太大') || 
+                                               errorLower.includes('文件超过') ||
+                                               errorLower.includes('file too large') ||
+                                               errorLower.includes('exceeds 100mb') ||
+                                               suggestDownloadLocal;
+                        
                         if (errorLower.includes('too many requests') || errorLower.includes('429')) {
                             errorMsg = t('too-many-requests');
                         } else if (errorLower.includes('forbidden') || errorLower.includes('403')) {
                             errorMsg = t('upload-rejected-desc');
                         } else if (errorLower.includes('network') || errorLower.includes('fetch')) {
                             errorMsg = t('network-error');
+                        } else if (isFileSizeError) {
+                            errorMsg = t('file-too-big-suggestion');
+                            suggestDownloadLocal = true;
                         } else if (!errorMsg || errorMsg === '处理失败') {
                             errorMsg = t('process-error', { error: errorMsg });
                         }
                         
                         const resultDiv = document.createElement('div');
                         resultDiv.className = 'result-item error';
-                        resultDiv.innerHTML = `
+                        
+                        // 如果建议下载本地版，添加下载链接
+                        let errorHtml = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">${t('process-failed')}</span>
                             <span class="error-message">${errorMsg}</span>
                         `;
+                        
+                        if (suggestDownloadLocal) {
+                            errorHtml += `
+                                <div class="error-suggestion" style="margin-top: 8px; padding: 12px; background: rgba(94, 106, 210, 0.1); border-radius: 8px; border-left: 3px solid var(--primary);">
+                                    <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">
+                                        ${t('download-local-suggestion')}
+                                    </div>
+                                    <a href="${downloadLocalUrl}" class="download-local-link" style="display: inline-block; padding: 6px 16px; background: var(--primary); color: var(--text); border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
+                                        ${t('download-local-link')}
+                                    </a>
+                                </div>
+                            `;
+                        }
+                        
+                        resultDiv.innerHTML = errorHtml;
                         document.querySelector('.result-panel').appendChild(resultDiv);
                     }
                     

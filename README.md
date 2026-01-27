@@ -103,7 +103,7 @@ TrimType 是一个**智能字体裁剪工具**，帮助开发者、设计师和�
 3. **启动服务**
    ```bash
    # Mac 用户
-   ./启动本地服务.command
+   ./👉启动本地服务.command
    
    # 或手动启动
    python3 app.py

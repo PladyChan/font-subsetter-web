@@ -3,6 +3,8 @@ from werkzeug.utils import secure_filename
 import os
 import json
 import tempfile
+import zipfile
+import shutil
 from typetrim import process_font_file  # 导入 TrimType 字体裁剪功能
 import logging
 from flask_limiter import Limiter
@@ -61,6 +63,9 @@ def translate_error_message(error_msg):
         "处理后的文件大小异常，可能处理失败": "处理后的文件异常，可能是字体文件格式问题",
         "too many requests": "请求过于频繁，请稍后再试",
         "forbidden": "访问被拒绝，可能是文件过大或服务器限制",
+        "文件超过100mb限制": "文件超过100MB限制，建议下载本地版进行处理",
+        "文件超过100mb": "文件超过100MB限制，建议下载本地版进行处理",
+        "文件太大": "文件太大，建议下载本地版进行处理",
         "internal server error": "服务器内部错误，请稍后重试",
         "load failed": "无法加载字体文件，可能是文件格式不正确、已损坏或不受支持",
         "failed to load": "无法加载字体文件，可能是文件格式不正确、已损坏或不受支持",
@@ -129,7 +134,11 @@ def process_font():
         if original_size < 1024:  # 小于1KB
             return jsonify({'error': '文件大小异常，可能不是有效的字体文件'}), 400
         if original_size > 100 * 1024 * 1024:  # 大于100MB
-            return jsonify({'error': '文件超过100MB限制'}), 400
+            return jsonify({
+                'error': '文件超过100MB限制',
+                'suggest_download_local': True,
+                'download_local_url': '/download/local'
+            }), 400
         
         # 获取选项
         options = json.loads(request.form.get('options', '{}'))
@@ -244,6 +253,99 @@ def favicon():
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
     )
+
+def create_local_package():
+    """创建本地版打包文件"""
+    try:
+        # 创建临时 zip 文件
+        zip_path = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+        zip_path.close()
+        
+        # 需要包含的文件和目录
+        include_files = [
+            'app.py',
+            'wsgi.py',
+            'typetrim.py',
+            'requirements.txt',
+            'README.md',
+            'USER_GUIDE.md',
+            'LICENSE',
+            '.gitignore',
+            'run_local.sh',
+            '👉启动本地服务.command',
+            'templates',
+            'static',
+        ]
+        
+        # 需要排除的目录和文件
+        exclude_patterns = [
+            '__pycache__',
+            '.venv',
+            'venv',
+            '.git',
+            '.DS_Store',
+            '*.pyc',
+            'typetrim/venv',
+            'tests',
+            'aliyun-deploy',
+            'src',
+        ]
+        
+        root_dir = app.root_path
+        
+        with zipfile.ZipFile(zip_path.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for item in include_files:
+                item_path = os.path.join(root_dir, item)
+                if os.path.exists(item_path):
+                    if os.path.isfile(item_path):
+                        # 添加单个文件
+                        zipf.write(item_path, item)
+                    elif os.path.isdir(item_path):
+                        # 添加目录及其内容
+                        for root, dirs, files in os.walk(item_path):
+                            # 排除不需要的目录
+                            dirs[:] = [d for d in dirs if d not in exclude_patterns and not d.startswith('.')]
+                            
+                            for file in files:
+                                # 排除不需要的文件
+                                if file.startswith('.') or file.endswith('.pyc') or file == '.DS_Store':
+                                    continue
+                                
+                                file_path = os.path.join(root, file)
+                                arcname = os.path.relpath(file_path, root_dir)
+                                zipf.write(file_path, arcname)
+        
+        return zip_path.name
+    except Exception as e:
+        logging.error(f"创建本地版打包失败: {str(e)}")
+        raise
+
+@app.route('/download/local', methods=['GET'])
+def download_local():
+    """下载本地版打包文件"""
+    try:
+        zip_path = create_local_package()
+        
+        response = send_file(
+            zip_path,
+            as_attachment=True,
+            mimetype='application/zip',
+            download_name='TrimType-本地版.zip'
+        )
+        
+        # 文件发送后删除临时文件
+        @response.call_on_close
+        def cleanup():
+            try:
+                os.unlink(zip_path)
+            except:
+                pass
+        
+        return response
+    except Exception as e:
+        logging.error(f"下载本地版失败: {str(e)}")
+        friendly_error = translate_error_message(str(e))
+        return jsonify({'error': friendly_error}), 500
 
 if __name__ == '__main__':
     import os
