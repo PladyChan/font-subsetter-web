@@ -1188,7 +1188,7 @@
         Designed &amp; Developed by <span style="font-weight: 600; color: rgba(255, 255, 255, 0.7);">Plady U^ᴥ^U</span>
     </footer>
     
-    <div class="progress" id="progress" data-i18n="processing">处理中...</div>
+    <div class="progress" id="progress" data-i18n="processing">处理中 </div>
     
     <script>
         // 是否是本地环境（从后端传递）
@@ -1220,7 +1220,7 @@
                 'opt-diacritics': '变音符号 (é, è, ê)',
                 'section-custom': '自定义字符',
                 'custom-placeholder': '请输入需要保留的字符，多个字符之间无需分隔，如：&*…￥',
-                'processing': '处理中...',
+                'processing': '处理中 ',
                 'error': '错误',
                 'process-failed': '处理失败',
                 'original': '原始:',
@@ -1263,7 +1263,7 @@
                 'opt-diacritics': 'Diacritics (é, è, ê)',
                 'section-custom': 'Custom Characters',
                 'custom-placeholder': 'Enter characters to keep, no separators needed, e.g.: &*…￥',
-                'processing': 'Processing...',
+                'processing': 'Processing ',
                 'error': 'Error',
                 'process-failed': 'Processing Failed',
                 'original': 'Original:',
@@ -1674,6 +1674,81 @@
                 
                 console.log('选项状态:', options);
                 
+                // 将文件集合转换为数组以便索引访问
+                const filesArray = Array.from(currentFiles);
+                
+                // 预加载队列：存储提前发起的请求
+                const preloadQueue = new Map();
+                
+                // 预加载下一个文件
+                const preloadNextFile = (nextIndex) => {
+                    if (nextIndex >= filesArray.length) return null;
+                    
+                    const nextFile = filesArray[nextIndex];
+                    const formData = new FormData();
+                    formData.append('font', nextFile);
+                    formData.append('options', JSON.stringify(options));
+                    
+                    console.log('预加载文件:', nextFile.name);
+                    
+                    // 提前发起请求，但不等待响应
+                    const preloadPromise = fetch('/process', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        // 读取响应但不解析，等待实际处理时再解析
+                        return response.text().then(text => ({ response, text }));
+                    });
+                    
+                    preloadQueue.set(nextIndex, preloadPromise);
+                    return preloadPromise;
+                };
+                
+                // 处理单个文件的函数
+                const processFile = async (fileIndex, file) => {
+                    // 检查是否有预加载的请求
+                    let responsePromise = preloadQueue.get(fileIndex);
+                    
+                    if (!responsePromise) {
+                        // 如果没有预加载，正常发起请求
+                        const formData = new FormData();
+                        formData.append('font', file);
+                        formData.append('options', JSON.stringify(options));
+                        
+                        console.log('开始处理文件:', file.name);
+                        console.log('文件大小:', file.size);
+                        
+                        responsePromise = fetch('/process', {
+                            method: 'POST',
+                            body: formData
+                        }).then(response => {
+                            return response.text().then(text => ({ response, text }));
+                        });
+                    } else {
+                        // 使用预加载的请求
+                        console.log('使用预加载的文件:', file.name);
+                        preloadQueue.delete(fileIndex);
+                    }
+                    
+                    // 启动模拟进度
+                    startSimulatedProgress(processed, filesArray.length);
+                    
+                    // 提前预加载下一个文件
+                    if (fileIndex + 1 < filesArray.length) {
+                        preloadNextFile(fileIndex + 1);
+                    }
+                    
+                    const { response, text: rawText } = await responsePromise;
+                    
+                    // 停止模拟进度
+                    if (progressInterval) {
+                        clearTimeout(progressInterval);
+                        progressInterval = null;
+                    }
+                    
+                    return { response, rawText };
+                };
+                
                 // 更新进度的函数
                 const updateProgress = (current, total) => {
                     const baseProgress = Math.round((current / total) * 100);
@@ -1734,31 +1809,18 @@
                     progressInterval = setTimeout(updateProgress, initialDelay);
                 };
                 
-                for (const file of currentFiles) {
-                    const formData = new FormData();
-                    formData.append('font', file);
-                    formData.append('options', JSON.stringify(options));
-                    
-                    // 启动模拟进度
-                    startSimulatedProgress(processed, currentFiles.size);
+                // 预加载第一个文件（如果有多个文件）
+                if (filesArray.length > 1) {
+                    preloadNextFile(0);
+                }
+                
+                // 顺序处理所有文件
+                for (let i = 0; i < filesArray.length; i++) {
+                    const file = filesArray[i];
                     
                     try {
-                        console.log('开始处理文件:', file.name);
-                        console.log('文件大小:', file.size);
-                        
-                        const response = await fetch('/process', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        // 停止模拟进度
-                        if (progressInterval) {
-                            clearTimeout(progressInterval);
-                            progressInterval = null;
-                        }
-                        
-                        // 统一读取文本，兼容非 JSON 错误响应（如 403 Forbidden）
-                        const rawText = await response.text();
+                        // 使用统一的处理函数
+                        const { response, rawText } = await processFile(i, file);
                         let parsed;
                         try {
                             parsed = rawText ? JSON.parse(rawText) : null;
@@ -1900,7 +1962,7 @@
                     
                     processed++;
                     // 更新真实进度
-                    updateProgress(processed, currentFiles.size);
+                    updateProgress(processed, filesArray.length);
                 }
                 
                 // 所有文件处理完成，显示100%
