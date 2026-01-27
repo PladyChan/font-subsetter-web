@@ -1058,7 +1058,9 @@
 </head>
 <body>
     <div class="top-bar">
+        {% if not is_local %}
         <a href="/download/local" class="download-local-btn" data-i18n="download-local">下载本地版</a>
+        {% endif %}
         <div class="language-switcher">
             <button class="lang-btn active" data-lang="zh">中</button>
             <button class="lang-btn" data-lang="en">EN</button>
@@ -1189,6 +1191,9 @@
     <div class="progress" id="progress" data-i18n="processing">处理中...</div>
     
     <script>
+        // 是否是本地环境（从后端传递）
+        const IS_LOCAL = {% if is_local %}true{% else %}false{% endif %};
+        
         // 翻译对象
         const translations = {
             zh: {
@@ -1589,18 +1594,13 @@
                         const resultPanel = document.querySelector('.result-panel');
                         const resultDiv = document.createElement('div');
                         resultDiv.className = 'result-item error';
+                        const errorMsg = !IS_LOCAL 
+                            ? `${t('file-too-big-suggestion')} <a href="/download/local" style="color: var(--primary); text-decoration: underline; margin-left: 4px;">${t('download-local-link')}</a>`
+                            : t('file-too-big-suggestion');
                         resultDiv.innerHTML = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">${t('process-failed')}</span>
-                            <span class="error-message">${t('file-too-big-suggestion')}</span>
-                            <div class="error-suggestion" style="margin-top: 8px; padding: 12px; background: rgba(94, 106, 210, 0.1); border-radius: 8px; border-left: 3px solid var(--primary);">
-                                <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">
-                                    ${t('download-local-suggestion')}
-                                </div>
-                                <a href="/download/local" class="download-local-link" style="display: inline-block; padding: 6px 16px; background: var(--primary); color: var(--text); border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
-                                    ${t('download-local-link')}
-                                </a>
-                            </div>
+                            <span class="error-message">${errorMsg}</span>
                         `;
                         resultPanel.appendChild(resultDiv);
                         return;
@@ -1815,25 +1815,16 @@
                         const resultDiv = document.createElement('div');
                         resultDiv.className = 'result-item error';
                         
-                        // 如果建议下载本地版，添加下载链接
+                        // 如果建议下载本地版，在错误消息中添加下载链接
+                        if (suggestDownloadLocal && !IS_LOCAL) {
+                            errorMsg = `${errorMsg} <a href="${downloadLocalUrl}" style="color: var(--primary); text-decoration: underline; margin-left: 4px;">${t('download-local-link')}</a>`;
+                        }
+                        
                         let errorHtml = `
                             <span class="filename">${file.name}</span>
                             <span class="status error">${t('process-failed')}</span>
                             <span class="error-message">${errorMsg}</span>
                         `;
-                        
-                        if (suggestDownloadLocal) {
-                            errorHtml += `
-                                <div class="error-suggestion" style="margin-top: 8px; padding: 12px; background: rgba(94, 106, 210, 0.1); border-radius: 8px; border-left: 3px solid var(--primary);">
-                                    <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">
-                                        ${t('download-local-suggestion')}
-                                    </div>
-                                    <a href="${downloadLocalUrl}" class="download-local-link" style="display: inline-block; padding: 6px 16px; background: var(--primary); color: var(--text); border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">
-                                        ${t('download-local-link')}
-                                    </a>
-                                </div>
-                            `;
-                        }
                         
                         resultDiv.innerHTML = errorHtml;
                         document.querySelector('.result-panel').appendChild(resultDiv);

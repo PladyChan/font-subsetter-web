@@ -101,7 +101,9 @@ def handle_413_error(error):
 def index():
     try:
         app.logger.debug('Attempting to render index.html')
-        return render_template('index.html')
+        # 检测是否是本地环境
+        is_local = request.host.startswith('localhost') or request.host.startswith('127.0.0.1') or request.host.startswith('0.0.0.0')
+        return render_template('index.html', is_local=is_local)
     except Exception as e:
         app.logger.error(f'Error rendering template: {str(e)}')
         return str(e), 500
