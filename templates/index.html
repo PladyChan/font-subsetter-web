@@ -1656,6 +1656,7 @@
                 document.querySelector('.result-panel').innerHTML = ''; // 清空之前的结果
                 
                 let processed = 0;
+                let progressInterval = null;
                 
                 // 收集所有选项
                 const options = {};
@@ -1673,12 +1674,73 @@
                 
                 console.log('选项状态:', options);
                 
+                // 更新进度的函数
+                const updateProgress = (current, total) => {
+                    const baseProgress = Math.round((current / total) * 100);
+                    progress.textContent = `${t('processing')} ${baseProgress}%`;
+                };
+                
+                // 启动模拟进度（用于单个文件处理时显示进度）
+                const startSimulatedProgress = (fileIndex, totalFiles) => {
+                    if (progressInterval) {
+                        clearTimeout(progressInterval);
+                    }
+                    
+                    const baseProgress = (fileIndex / totalFiles) * 100;
+                    const maxProgress = ((fileIndex + 1) / totalFiles) * 100 - 5; // 留5%给完成时
+                    
+                    // 对于单个文件，从10%开始，避免一直显示0%
+                    const startProgress = totalFiles === 1 ? 10 : baseProgress;
+                    let currentSimulated = startProgress - baseProgress;
+                    
+                    // 立即显示初始进度
+                    progress.textContent = `${t('processing')} ${Math.round(startProgress)}%`;
+                    
+                    const updateProgress = () => {
+                        // 随机增加进度：1-5%之间，但越接近maxProgress，增加越慢
+                        const remaining = maxProgress - (baseProgress + currentSimulated);
+                        let increment;
+                        
+                        if (remaining > 20) {
+                            // 还有较多剩余，可以快速增加
+                            increment = 1 + Math.random() * 4; // 1-5%
+                        } else if (remaining > 10) {
+                            // 中等剩余，中等速度
+                            increment = 0.5 + Math.random() * 2.5; // 0.5-3%
+                        } else {
+                            // 接近完成，慢速增加
+                            increment = 0.3 + Math.random() * 1.2; // 0.3-1.5%
+                        }
+                        
+                        currentSimulated += increment;
+                        const simulatedProgress = Math.min(baseProgress + currentSimulated, maxProgress);
+                        progress.textContent = `${t('processing')} ${Math.round(simulatedProgress)}%`;
+                        
+                        // 如果还没达到最大值，继续更新（使用随机间隔）
+                        if (simulatedProgress < maxProgress) {
+                            const nextInterval = totalFiles === 1 
+                                ? 80 + Math.random() * 120  // 80-200ms
+                                : 100 + Math.random() * 150; // 100-250ms
+                            progressInterval = setTimeout(updateProgress, nextInterval);
+                        } else {
+                            progressInterval = null;
+                        }
+                    };
+                    
+                    // 启动第一次更新（使用随机初始延迟）
+                    const initialDelay = totalFiles === 1 
+                        ? 100 + Math.random() * 100  // 100-200ms
+                        : 150 + Math.random() * 100; // 150-250ms
+                    progressInterval = setTimeout(updateProgress, initialDelay);
+                };
+                
                 for (const file of currentFiles) {
                     const formData = new FormData();
                     formData.append('font', file);
                     formData.append('options', JSON.stringify(options));
                     
-                    progress.textContent = `${t('processing')} ${Math.round((processed / currentFiles.size) * 100)}%`;
+                    // 启动模拟进度
+                    startSimulatedProgress(processed, currentFiles.size);
                     
                     try {
                         console.log('开始处理文件:', file.name);
@@ -1688,6 +1750,12 @@
                             method: 'POST',
                             body: formData
                         });
+                        
+                        // 停止模拟进度
+                        if (progressInterval) {
+                            clearTimeout(progressInterval);
+                            progressInterval = null;
+                        }
                         
                         // 统一读取文本，兼容非 JSON 错误响应（如 403 Forbidden）
                         const rawText = await response.text();
@@ -1831,17 +1899,33 @@
                     }
                     
                     processed++;
+                    // 更新真实进度
+                    updateProgress(processed, currentFiles.size);
                 }
+                
+                // 所有文件处理完成，显示100%
+                if (progressInterval) {
+                    clearTimeout(progressInterval);
+                    progressInterval = null;
+                }
+                progress.textContent = `${t('processing')} 100%`;
                 
             } catch (error) {
                 console.error('整体处理过程出错:', error);
+                if (progressInterval) {
+                    clearTimeout(progressInterval);
+                    progressInterval = null;
+                }
                 let errorMsg = error.message || t('process-error-general');
                 if (!errorMsg || errorMsg.length < 10) {
                     errorMsg = t('process-error-general');
                 }
                 showError(errorMsg);
             } finally {
-                progress.style.display = 'none';
+                // 延迟一点再隐藏，让用户看到100%
+                setTimeout(() => {
+                    progress.style.display = 'none';
+                }, 300);
                 processBtn.disabled = false;
             }
         });
